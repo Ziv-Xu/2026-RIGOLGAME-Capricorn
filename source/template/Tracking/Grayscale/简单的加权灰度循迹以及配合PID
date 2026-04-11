@@ -1,0 +1,137 @@
+/*
+从左到右，红外对应的引脚为：
+PB12,PB13,PB14,PB15,PB4,PB5,PA11,PA12
+*/
+#include "main.h"
+
+
+// ==================== 修正后的引脚宏定义 ====================
+// 从左到右 8路红外：PB12, PB13, PB14, PB15, PB4, PB5, PA11, PA12
+#define IR1_PORT GPIOB
+#define IR1_PIN  GPIO_PIN_12
+#define IR2_PORT GPIOB
+#define IR2_PIN  GPIO_PIN_13
+#define IR3_PORT GPIOB
+#define IR3_PIN  GPIO_PIN_14
+#define IR4_PORT GPIOB
+#define IR4_PIN  GPIO_PIN_15
+#define IR5_PORT GPIOB
+#define IR5_PIN  GPIO_PIN_4
+#define IR6_PORT GPIOB
+#define IR6_PIN  GPIO_PIN_5
+#define IR7_PORT GPIOA
+#define IR7_PIN  GPIO_PIN_11
+#define IR8_PORT GPIOA
+#define IR8_PIN  GPIO_PIN_12
+
+//==================== 2. PID 结构体（含4个参数） ====================
+typedef struct
+{
+    float Kp,Ki,Kd;
+    int error;    // 偏差
+    int P;        // 比例项
+    int I;        // 积分项
+    int D;        // 微分项
+    int last_error;
+    int output;
+}PID_TypeDef;
+PID_TypeDef PID = {12, 0, 6, 0,0,0,0,0,0};
+
+const int IR_Weight[8] = {-4, -3, -2, -1, 1, 2, 3, 4}; 
+
+// ==================== 单路红外读取函数 ====================
+// 功能：读取指定路数的红外电平（0-有反射/黑线，1-无反射/白线，需根据实际模块调整）
+uint8_t IR_Read(uint8_t num)
+{
+    switch(num)
+    {
+        case 1:  return HAL_GPIO_ReadPin(IR1_PORT, IR1_PIN);
+        case 2:  return HAL_GPIO_ReadPin(IR2_PORT, IR2_PIN);
+        case 3:  return HAL_GPIO_ReadPin(IR3_PORT, IR3_PIN);
+        case 4:  return HAL_GPIO_ReadPin(IR4_PORT, IR4_PIN);
+        case 5:  return HAL_GPIO_ReadPin(IR5_PORT, IR5_PIN);
+        case 6:  return HAL_GPIO_ReadPin(IR6_PORT, IR6_PIN);
+        case 7:  return HAL_GPIO_ReadPin(IR7_PORT, IR7_PIN);
+        case 8:  return HAL_GPIO_ReadPin(IR8_PORT, IR8_PIN);
+        default: return 0; // 错误输入返回0
+    }
+}
+
+// ==================== 八路红外同时读取函数 ====================
+// 功能：返回8位数据，每一位对应一路红外状态（bit0-IR1, bit7-IR8）
+uint8_t IR_Read_All(void)
+{
+    uint8_t status = 0;
+    
+    // 按位组合8路状态
+    if (IR_Read(1) == 0) status |= (1 << 0);
+    if (IR_Read(2) == 0) status |= (1 << 1);
+    if (IR_Read(3) == 0) status |= (1 << 2);
+    if (IR_Read(4) == 0) status |= (1 << 3);
+    if (IR_Read(5) == 0) status |= (1 << 4);
+    if (IR_Read(6) == 0) status |= (1 << 5);
+    if (IR_Read(7) == 0) status |= (1 << 6);
+    if (IR_Read(8) == 0) status |= (1 << 7);
+    
+    return status;
+}
+
+int Get_Track_Error(void)
+{
+    uint8_t status = IR_Read_All();  // 直接用你的函数！
+    int sum = 0;
+    int count = 0;
+
+    // 直接遍历 8 个位，读取是否检测到黑线
+    for(int i = 0; i < 8; i++)
+    {
+        if(status & (1 << i))  // 判断第i位是否为1（检测到黑线）
+        {
+            sum += Weight[i];   // 加权累加
+            count++;            // 统计检测到黑线的传感器数量
+        }
+    }
+
+    if(count == 0)
+    {
+        Track_fix();//循迹修复，主要用于循迹失败后的自救行为
+        return 0; // 丢线处理，可自己改
+    }
+
+    // 计算最终偏差（平滑稳定）
+    return sum / count;  
+}
+
+int PID_Calc(int error)
+{
+    PID.error = error;
+    PID.P = PID.Kp * PID.error;
+    PID.I = PID.Ki *(PID.I + PID.error);
+    PID.D = PID.Kd *(PID.error - PID.last_error);
+    PID.output = PID.P + PID.I + PID.D;
+    PID.last_error = PID.error;
+    return PID.output;
+}
+
+//==================== 7. 循迹主函数（直接调用） ====================
+void Track_Run(void)
+{
+    #define BASE_SPEED 50
+
+    // 1. 获取偏差
+    int error = Get_Track_Error();
+
+    // 2. PID计算
+    int pwm = PID_Calc(error);
+
+    // 3. 电机差速
+    int left  = BASE_SPEED + pwm;
+    int right = BASE_SPEED - pwm;
+
+    // 4. 限幅
+    if(left>99)left=99;if(left<0)left=0;
+    if(right>99)right=99;if(right<0)right=0;
+
+    // 5. 输出电机（你自己的电机函数）
+    Motor_Set(left,right);
+}
