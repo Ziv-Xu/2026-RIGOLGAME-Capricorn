@@ -12,7 +12,7 @@ DOUT 上拉输入，SCK 推挽输出
 */
 
 #include "stm32f1xx_hal.h"  // 根据你的芯片改：f4xx、g0、l4等
-
+#incude "gpio.h" //使用hal库配置好了引脚，需要
 
 
 
@@ -107,7 +107,7 @@ long HX711_Read_Average(uint8_t times)
 }
 
 long  hx711_offset = 0;  // 去皮偏移
-float hx711_coef   = 0.0015f; // 校准系数（也就是单位换算，之后进行换算）
+float hx711_coef   = 0.00015f; // 校准系数（也就是单位换算，之后进行换算）
 // 去皮函数
 void HX711_Tare(void)
 {
