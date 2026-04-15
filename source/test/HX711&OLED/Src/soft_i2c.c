@@ -1,44 +1,5 @@
-/*
-目前都是一个字节一个应答来传送，后续需要升级为发送数据包以提高传输效率
-*/
-
-//===========以下是头文件部分===========
-#ifndef __SOFT_I2C_H
-#define __SOFT_I2C_H
-
-#include "stm32f1xx_hal.h"  // 根据你的芯片型号修改，如f4/f7/g4等
-
-//==================== 引脚配置 ====================
-#define I2C_SCL_PIN GPIO_PIN_6
-#define I2C_SCL_GPIO_PORT GPIOB
-#define I2C_SDA_PIN GPIO_PIN_7
-#define I2C_SDA_GPIO_PORT GPIOB
-//==================================================
-
-// I2C 读写方向
-#define I2C_WRITE 0
-#define I2C_READ  1
-
-// 函数声明
-void I2C_Start(void);
-void I2C_Stop(void);
-uint8_t I2C_Wait_Ack(void);
-void I2C_Ack(void);
-void I2C_NAck(void);
-void I2C_Send_Byte(uint8_t txd);
-uint8_t I2C_Read_Byte(unsigned char ack);
-
-// 常用读写接口
-uint8_t I2C_Write_One_Byte(uint8_t addr, uint8_t reg, uint8_t data);
-uint8_t I2C_Read_One_Byte(uint8_t addr, uint8_t reg);
-void I2C_Write_Buf(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf);
-void I2C_Read_Buf(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf);
-
-#endif
-
-
-//=============以下为源文件部分=============
 #include "soft_i2c.h"
+#include "gpio.h"
 
 // 简单延时函数（根据主频调整，保证I2C速度<400KHz即可）
 static void I2C_Delay(void)
@@ -48,23 +9,22 @@ static void I2C_Delay(void)
 }
 /*
 模式的选择之后在CubeMX中配置
-// SDA 输入模式，也就是此页中把PB6设置为上拉开漏输出
+// SDA 输入模式，也就是此页中把PB6设置为输出上拉模式
 static void SDA_Input_Mode(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     GPIO_InitStruct.Pin = I2C_SDA_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_PULLUP;  // 上拉
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(I2C_SDA_GPIO_PORT, &GPIO_InitStruct);
 }
 
-// SDA 输出模式，也就是此页中PB7设置为上拉开漏输出
+// SDA 输出模式，也就是此页中PB7设置为上拉输入模式
 static void SDA_Output_Mode(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     GPIO_InitStruct.Pin = I2C_SDA_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(I2C_SDA_GPIO_PORT, &GPIO_InitStruct);
@@ -147,7 +107,7 @@ void I2C_NAck(void)
 void I2C_Send_Byte(uint8_t txd)
 {
     uint8_t t;
-    SDA_Output_Mode();
+    //SDA_Output_Mode();
     HAL_GPIO_WritePin(I2C_SCL_GPIO_PORT, I2C_SCL_PIN, GPIO_PIN_RESET);
     for(t=0;t<8;t++)
     {
@@ -168,7 +128,7 @@ void I2C_Send_Byte(uint8_t txd)
 uint8_t I2C_Read_Byte(unsigned char ack)
 {
     unsigned char i,receive=0;
-    SDA_Input_Mode();
+    //SDA_Input_Mode();
     for(i=0;i<8;i++)
     {
         HAL_GPIO_WritePin(I2C_SCL_GPIO_PORT, I2C_SCL_PIN, GPIO_PIN_RESET);
