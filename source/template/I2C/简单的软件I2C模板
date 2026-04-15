@@ -1,3 +1,7 @@
+/*
+目前都是一个字节一个应答来传送，后续需要升级为发送数据包以提高传输效率
+*/
+
 //===========以下是头文件部分===========
 #ifndef __SOFT_I2C_H
 #define __SOFT_I2C_H
@@ -44,22 +48,23 @@ static void I2C_Delay(void)
 }
 /*
 模式的选择之后在CubeMX中配置
-// SDA 输入模式，也就是此页中把PB6设置为上拉输入模式
+// SDA 输入模式，也就是此页中把PB6设置为上拉开漏输出
 static void SDA_Input_Mode(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     GPIO_InitStruct.Pin = I2C_SDA_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
     GPIO_InitStruct.Pull = GPIO_PULLUP;  // 上拉
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(I2C_SDA_GPIO_PORT, &GPIO_InitStruct);
 }
 
-// SDA 输出模式，也就是此页中PB7设置为上拉输出模式
+// SDA 输出模式，也就是此页中PB7设置为上拉开漏输出
 static void SDA_Output_Mode(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     GPIO_InitStruct.Pin = I2C_SDA_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(I2C_SDA_GPIO_PORT, &GPIO_InitStruct);
