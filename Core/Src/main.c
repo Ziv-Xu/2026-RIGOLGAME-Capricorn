@@ -134,6 +134,7 @@ uint8_t g_arm_done_flag = 0;  // 机械臂动作完成标志 0=未完成 1=已完成
 uint8_t g_track_raw = 0;        // 循迹传感器原始值
 int8_t  g_track_error = 0;      // 循迹偏差
 float   g_track_pid_out = 0;    // PID输出值
+
 // PID历史变量
 int8_t  g_track_error_last = 0;
 float   g_track_integral = 0;
