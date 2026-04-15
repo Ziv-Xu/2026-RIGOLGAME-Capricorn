@@ -44,7 +44,7 @@ static void I2C_Delay(void)
 }
 /*
 模式的选择之后在CubeMX中配置
-// SDA 输入模式，也就是此页中把PB6设置为输出上拉模式
+// SDA 输入模式，也就是此页中把PB6设置为上拉输入模式
 static void SDA_Input_Mode(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -54,7 +54,7 @@ static void SDA_Input_Mode(void)
     HAL_GPIO_Init(I2C_SDA_GPIO_PORT, &GPIO_InitStruct);
 }
 
-// SDA 输出模式，也就是此页中PB7设置为上拉输入模式
+// SDA 输出模式，也就是此页中PB7设置为上拉输出模式
 static void SDA_Output_Mode(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
