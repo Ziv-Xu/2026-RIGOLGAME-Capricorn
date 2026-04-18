@@ -91,8 +91,6 @@ void Error_Handler(void);
 #define HUI3_GPIO_Port GPIOB
 #define HUI2_Pin GPIO_PIN_14
 #define HUI2_GPIO_Port GPIOB
-#define HUI1_Pin GPIO_PIN_15
-#define HUI1_GPIO_Port GPIOB
 #define DUO_A_Pin GPIO_PIN_6
 #define DUO_A_GPIO_Port GPIOC
 #define DUO_B_Pin GPIO_PIN_7

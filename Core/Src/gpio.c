@@ -86,12 +86,17 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : HUI4_Pin HUI3_Pin HUI2_Pin HUI1_Pin
-                           KEY3_Pin KEY4_Pin */
-  GPIO_InitStruct.Pin = HUI4_Pin|HUI3_Pin|HUI2_Pin|HUI1_Pin
-                          |KEY3_Pin|KEY4_Pin;
+  /*Configure GPIO pins : HUI4_Pin HUI3_Pin HUI2_Pin KEY3_Pin
+                           KEY4_Pin */
+  GPIO_InitStruct.Pin = HUI4_Pin|HUI3_Pin|HUI2_Pin|KEY3_Pin
+                          |KEY4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PB15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED_Pin YA_SCK_Pin YA_DT_Pin */
