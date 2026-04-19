@@ -745,18 +745,74 @@ void Car_State_Machine(void)
 	g_key_val = Key_Scan();
 	uint16_t l, r, dir;
 
+	//待机：模式选择
 	switch(g_car_state)
-		Motor_Stop();
-      	OLED_ShowString(0,0,g_task_mode==TASK_MODE_FIXED?"Mode1:Fixed":"Mode2:Custom");
-     	OLED_ShowString(0,1,"K1:Start K3:Mode");
-		if(g_key_val = 1){
-			
-		}
-
+	{
+		case STATE_IDLE:
+			Motor_Stop();
+			OLED_ShowString(0,0,g_task_mode==TASK_MODE_FIXED?"Mode1:Fixed":"Mode2:Custom");
+			OLED_ShowString(0,1,"K1:Start K3:Mode");
+			if(g_key_val = 1){
+				g_car_state = STATE_START;
+				OLED_Clear(); 			
+			}
+			if(g_key_val = 3){
+				g_task_mode = !g_task_mode;
+				OLED_Clear();
+				HAL_Delay(200);
+			}
+		
+		//启动
+		case STATE_START:
+			OLED_ShowString(0,0,"Task Start");
+			HAL_Delay(500);
+			g_goods_index = 0;	g_unload_index = 0;
+			g_target_node = NODE_WAREHOUSE;
+			g_car_state = STATE_GO_WAREHOUSE;
+			break;
+		
+		//前往仓库
+		case STATE_GO_WAREHOUSE:
+			dir = Path_Plan(g_current_node,g_target_node);	//给dir确认是前进1还是后退0（）
+			Track_Sensor_Read();
+			Track_PID_Calc();
+			Encoder_Distance_Calc();
+			l=(dir?PWM_BACK:PWM_BASE)-g_track_pid_out;
+			r=(dir?PWM_BACK:PWM_BASE)+g_track_pid_out;
+			dir ? Motor_Backward(l,r) : Motor_Forward(l,r);
+			OLED_ShowString(0,0,"Go Warehouse");
+			if(Border_Check())
+			{
+				Motor_Stop();
+				g_car_state=STATE_ALIGN_CENTER;
+			}
+			break;
+	
   
+	}
 }
-
 /* USER CODE END 4 */
+
+// ====================== 串口中断回调 ======================
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  if(huart==&huart1)
+  {
+    if(uart_rx_data=='\n')
+    {
+      uart_rx_buf[uart_rx_cnt]='\0';
+      sscanf((char*)uart_rx_buf,"C,%f",&center_offset);
+      line_flag=1;
+      uart_rx_cnt=0;
+    }
+    else
+    {
+      if(uart_rx_cnt < UART_BUF_SIZE-1) uart_rx_buf[uart_rx_cnt++] = uart_rx_data;
+      else uart_rx_cnt = 0;
+    }
+    HAL_UART_Receive_IT(&huart1, &uart_rx_data, 1);
+  }
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
