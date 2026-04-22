@@ -1,0 +1,1110 @@
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 1
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"arm.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "Core/Src/arm.c"
+  18              		.section	.text.PCA9685_Write,"ax",%progbits
+  19              		.align	1
+  20              		.global	PCA9685_Write
+  21              		.syntax unified
+  22              		.thumb
+  23              		.thumb_func
+  25              	PCA9685_Write:
+  26              	.LVL0:
+  27              	.LFB65:
+   1:Core/Src/arm.c **** #include "arm.h"
+   2:Core/Src/arm.c **** #include "i2c.h"
+   3:Core/Src/arm.c **** 
+   4:Core/Src/arm.c **** // 预设角度数组 {J0, J1, J2}
+   5:Core/Src/arm.c **** static const float arm_points[][3] = {
+   6:Core/Src/arm.c ****     {  0, 45, -80},   // RESET
+   7:Core/Src/arm.c ****     { 90,  0, -80},   // ALIGN
+   8:Core/Src/arm.c ****     { 90, 30, -30},   // PICK_A
+   9:Core/Src/arm.c ****     { 90, 30, -30},   // PICK_B (可微调)
+  10:Core/Src/arm.c ****     { 90, 30, -30},   // PICK_C (可微调)
+  11:Core/Src/arm.c ****     { 90, 30, -30},   // STORE (移动位)
+  12:Core/Src/arm.c ****     { 90, 80, -30}    // DROP
+  13:Core/Src/arm.c **** };
+  14:Core/Src/arm.c **** 
+  15:Core/Src/arm.c **** static uint8_t arm_done = 0;
+  16:Core/Src/arm.c **** static void (*done_callback)(void) = NULL;
+  17:Core/Src/arm.c **** 
+  18:Core/Src/arm.c **** void PCA9685_Write(uint8_t reg, uint8_t data)
+  19:Core/Src/arm.c **** {
+  28              		.loc 1 19 1 view -0
+  29              		.cfi_startproc
+  30              		@ args = 0, pretend = 0, frame = 8
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32              		.loc 1 19 1 is_stmt 0 view .LVU1
+  33 0000 00B5     		push	{lr}
+  34              	.LCFI0:
+  35              		.cfi_def_cfa_offset 4
+  36              		.cfi_offset 14, -4
+  37 0002 87B0     		sub	sp, sp, #28
+  38              	.LCFI1:
+  39              		.cfi_def_cfa_offset 32
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 2
+
+
+  40 0004 0246     		mov	r2, r0
+  41 0006 8DF81710 		strb	r1, [sp, #23]
+  20:Core/Src/arm.c ****     HAL_I2C_Mem_Write(&hi2c1, 0x80, reg, 1, &data, 1, 100);
+  42              		.loc 1 20 5 is_stmt 1 view .LVU2
+  43 000a 6423     		movs	r3, #100
+  44 000c 0293     		str	r3, [sp, #8]
+  45 000e 0123     		movs	r3, #1
+  46 0010 0193     		str	r3, [sp, #4]
+  47 0012 0DF11701 		add	r1, sp, #23
+  48              	.LVL1:
+  49              		.loc 1 20 5 is_stmt 0 view .LVU3
+  50 0016 0091     		str	r1, [sp]
+  51 0018 8021     		movs	r1, #128
+  52              	.LVL2:
+  53              		.loc 1 20 5 view .LVU4
+  54 001a 0248     		ldr	r0, .L3
+  55              	.LVL3:
+  56              		.loc 1 20 5 view .LVU5
+  57 001c FFF7FEFF 		bl	HAL_I2C_Mem_Write
+  58              	.LVL4:
+  21:Core/Src/arm.c **** }
+  59              		.loc 1 21 1 view .LVU6
+  60 0020 07B0     		add	sp, sp, #28
+  61              	.LCFI2:
+  62              		.cfi_def_cfa_offset 4
+  63              		@ sp needed
+  64 0022 00BD     		pop	{pc}
+  65              	.L4:
+  66              		.align	2
+  67              	.L3:
+  68 0024 00000000 		.word	hi2c1
+  69              		.cfi_endproc
+  70              	.LFE65:
+  72              		.section	.text.Servo_SetAngle,"ax",%progbits
+  73              		.align	1
+  74              		.global	Servo_SetAngle
+  75              		.syntax unified
+  76              		.thumb
+  77              		.thumb_func
+  79              	Servo_SetAngle:
+  80              	.LVL5:
+  81              	.LFB66:
+  22:Core/Src/arm.c **** 
+  23:Core/Src/arm.c **** void Servo_SetAngle(uint8_t ch, float angle)
+  24:Core/Src/arm.c **** {
+  82              		.loc 1 24 1 is_stmt 1 view -0
+  83              		.cfi_startproc
+  84              		@ args = 0, pretend = 0, frame = 8
+  85              		@ frame_needed = 0, uses_anonymous_args = 0
+  86              		.loc 1 24 1 is_stmt 0 view .LVU8
+  87 0000 30B5     		push	{r4, r5, lr}
+  88              	.LCFI3:
+  89              		.cfi_def_cfa_offset 12
+  90              		.cfi_offset 4, -12
+  91              		.cfi_offset 5, -8
+  92              		.cfi_offset 14, -4
+  93 0002 87B0     		sub	sp, sp, #28
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 3
+
+
+  94              	.LCFI4:
+  95              		.cfi_def_cfa_offset 40
+  96 0004 0546     		mov	r5, r0
+  97 0006 0C46     		mov	r4, r1
+  25:Core/Src/arm.c ****     if(angle > 180) angle = 180;
+  98              		.loc 1 25 5 is_stmt 1 view .LVU9
+  99              		.loc 1 25 7 is_stmt 0 view .LVU10
+ 100 0008 1B49     		ldr	r1, .L10
+ 101              	.LVL6:
+ 102              		.loc 1 25 7 view .LVU11
+ 103 000a 2046     		mov	r0, r4
+ 104              	.LVL7:
+ 105              		.loc 1 25 7 view .LVU12
+ 106 000c FFF7FEFF 		bl	__aeabi_fcmpgt
+ 107              	.LVL8:
+ 108 0010 30B9     		cbnz	r0, .L7
+  26:Core/Src/arm.c ****     if(angle < 0)   angle = 0;
+ 109              		.loc 1 26 5 is_stmt 1 view .LVU13
+ 110              		.loc 1 26 7 is_stmt 0 view .LVU14
+ 111 0012 0021     		movs	r1, #0
+ 112 0014 2046     		mov	r0, r4
+ 113 0016 FFF7FEFF 		bl	__aeabi_fcmplt
+ 114              	.LVL9:
+ 115 001a 10B1     		cbz	r0, .L6
+ 116              		.loc 1 26 27 discriminator 1 view .LVU15
+ 117 001c 0024     		movs	r4, #0
+ 118              	.LVL10:
+ 119              		.loc 1 26 27 discriminator 1 view .LVU16
+ 120 001e 00E0     		b	.L6
+ 121              	.LVL11:
+ 122              	.L7:
+  25:Core/Src/arm.c ****     if(angle > 180) angle = 180;
+ 123              		.loc 1 25 27 discriminator 1 view .LVU17
+ 124 0020 154C     		ldr	r4, .L10
+ 125              	.LVL12:
+ 126              	.L6:
+  27:Core/Src/arm.c ****     uint16_t pulse = 500 + (angle / 180.0f) * 2000;
+ 127              		.loc 1 27 5 is_stmt 1 view .LVU18
+ 128              		.loc 1 27 35 is_stmt 0 view .LVU19
+ 129 0022 1549     		ldr	r1, .L10
+ 130 0024 2046     		mov	r0, r4
+ 131 0026 FFF7FEFF 		bl	__aeabi_fdiv
+ 132              	.LVL13:
+ 133              		.loc 1 27 45 view .LVU20
+ 134 002a 1449     		ldr	r1, .L10+4
+ 135 002c FFF7FEFF 		bl	__aeabi_fmul
+ 136              	.LVL14:
+ 137              		.loc 1 27 26 view .LVU21
+ 138 0030 1349     		ldr	r1, .L10+8
+ 139 0032 FFF7FEFF 		bl	__aeabi_fadd
+ 140              	.LVL15:
+ 141              		.loc 1 27 14 view .LVU22
+ 142 0036 FFF7FEFF 		bl	__aeabi_f2uiz
+ 143              	.LVL16:
+ 144 003a 83B2     		uxth	r3, r0
+ 145              	.LVL17:
+  28:Core/Src/arm.c ****     uint16_t off = (pulse * 4096) / 20000;
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 4
+
+
+ 146              		.loc 1 28 5 is_stmt 1 view .LVU23
+ 147              		.loc 1 28 27 is_stmt 0 view .LVU24
+ 148 003c 1B03     		lsls	r3, r3, #12
+ 149              	.LVL18:
+ 150              		.loc 1 28 35 view .LVU25
+ 151 003e 114A     		ldr	r2, .L10+12
+ 152 0040 82FB0323 		smull	r2, r3, r2, r3
+ 153 0044 5913     		asrs	r1, r3, #13
+ 154              	.LVL19:
+  29:Core/Src/arm.c ****     uint8_t da[4] = {0, 0, off & 0xFF, off >> 8};
+ 155              		.loc 1 29 5 is_stmt 1 view .LVU26
+ 156              		.loc 1 29 13 is_stmt 0 view .LVU27
+ 157 0046 0022     		movs	r2, #0
+ 158 0048 8DF81420 		strb	r2, [sp, #20]
+ 159 004c 8DF81520 		strb	r2, [sp, #21]
+ 160 0050 8DF81610 		strb	r1, [sp, #22]
+ 161 0054 5B0D     		lsrs	r3, r3, #21
+ 162              	.LVL20:
+ 163              		.loc 1 29 13 view .LVU28
+ 164 0056 8DF81730 		strb	r3, [sp, #23]
+  30:Core/Src/arm.c ****     HAL_I2C_Mem_Write(&hi2c1, 0x80, 0x06 + 4*ch, 1, da, 4, 100);
+ 165              		.loc 1 30 5 is_stmt 1 view .LVU29
+ 166 005a AA00     		lsls	r2, r5, #2
+ 167 005c 6423     		movs	r3, #100
+ 168 005e 0293     		str	r3, [sp, #8]
+ 169 0060 0423     		movs	r3, #4
+ 170 0062 0193     		str	r3, [sp, #4]
+ 171 0064 05AB     		add	r3, sp, #20
+ 172 0066 0093     		str	r3, [sp]
+ 173 0068 0123     		movs	r3, #1
+ 174 006a 0632     		adds	r2, r2, #6
+ 175 006c 8021     		movs	r1, #128
+ 176 006e 0648     		ldr	r0, .L10+16
+ 177              	.LVL21:
+ 178              		.loc 1 30 5 is_stmt 0 view .LVU30
+ 179 0070 FFF7FEFF 		bl	HAL_I2C_Mem_Write
+ 180              	.LVL22:
+  31:Core/Src/arm.c **** }
+ 181              		.loc 1 31 1 view .LVU31
+ 182 0074 07B0     		add	sp, sp, #28
+ 183              	.LCFI5:
+ 184              		.cfi_def_cfa_offset 12
+ 185              		@ sp needed
+ 186 0076 30BD     		pop	{r4, r5, pc}
+ 187              	.LVL23:
+ 188              	.L11:
+ 189              		.loc 1 31 1 view .LVU32
+ 190              		.align	2
+ 191              	.L10:
+ 192 0078 00003443 		.word	1127481344
+ 193 007c 0000FA44 		.word	1157234688
+ 194 0080 0000FA43 		.word	1140457472
+ 195 0084 AD8BDB68 		.word	1759218605
+ 196 0088 00000000 		.word	hi2c1
+ 197              		.cfi_endproc
+ 198              	.LFE66:
+ 200              		.section	.text.Arm_MoveToPoint,"ax",%progbits
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 5
+
+
+ 201              		.align	1
+ 202              		.global	Arm_MoveToPoint
+ 203              		.syntax unified
+ 204              		.thumb
+ 205              		.thumb_func
+ 207              	Arm_MoveToPoint:
+ 208              	.LVL24:
+ 209              	.LFB68:
+  32:Core/Src/arm.c **** 
+  33:Core/Src/arm.c **** void Arm_Init(void)
+  34:Core/Src/arm.c **** {
+  35:Core/Src/arm.c ****     HAL_Delay(100);
+  36:Core/Src/arm.c ****     PCA9685_Write(0x00, 0x10);
+  37:Core/Src/arm.c ****     PCA9685_Write(0xFE, 121);
+  38:Core/Src/arm.c ****     PCA9685_Write(0x00, 0x20);
+  39:Core/Src/arm.c ****     Arm_MoveToPoint(ARM_POINT_RESET);
+  40:Core/Src/arm.c ****     Magnet_Off();
+  41:Core/Src/arm.c **** }
+  42:Core/Src/arm.c **** 
+  43:Core/Src/arm.c **** void Arm_MoveToPoint(ArmPoint point)
+  44:Core/Src/arm.c **** {
+ 210              		.loc 1 44 1 is_stmt 1 view -0
+ 211              		.cfi_startproc
+ 212              		@ args = 0, pretend = 0, frame = 0
+ 213              		@ frame_needed = 0, uses_anonymous_args = 0
+ 214              		.loc 1 44 1 is_stmt 0 view .LVU34
+ 215 0000 2DE9F84F 		push	{r3, r4, r5, r6, r7, r8, r9, r10, fp, lr}
+ 216              	.LCFI6:
+ 217              		.cfi_def_cfa_offset 40
+ 218              		.cfi_offset 3, -40
+ 219              		.cfi_offset 4, -36
+ 220              		.cfi_offset 5, -32
+ 221              		.cfi_offset 6, -28
+ 222              		.cfi_offset 7, -24
+ 223              		.cfi_offset 8, -20
+ 224              		.cfi_offset 9, -16
+ 225              		.cfi_offset 10, -12
+ 226              		.cfi_offset 11, -8
+ 227              		.cfi_offset 14, -4
+  45:Core/Src/arm.c ****     float t0 = arm_points[point][0];
+ 228              		.loc 1 45 5 is_stmt 1 view .LVU35
+ 229              		.loc 1 45 11 is_stmt 0 view .LVU36
+ 230 0004 384B     		ldr	r3, .L16
+ 231 0006 00EB4002 		add	r2, r0, r0, lsl #1
+ 232 000a 03EB8201 		add	r1, r3, r2, lsl #2
+ 233 000e 53F82290 		ldr	r9, [r3, r2, lsl #2]	@ float
+ 234              	.LVL25:
+  46:Core/Src/arm.c ****     float t1 = arm_points[point][1];
+ 235              		.loc 1 46 5 is_stmt 1 view .LVU37
+ 236              		.loc 1 46 11 is_stmt 0 view .LVU38
+ 237 0012 D1F80480 		ldr	r8, [r1, #4]	@ float
+ 238              	.LVL26:
+  47:Core/Src/arm.c ****     float t2 = arm_points[point][2];
+ 239              		.loc 1 47 5 is_stmt 1 view .LVU39
+ 240              		.loc 1 47 11 is_stmt 0 view .LVU40
+ 241 0016 8F68     		ldr	r7, [r1, #8]	@ float
+ 242              	.LVL27:
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 6
+
+
+  48:Core/Src/arm.c ****     static float n0 = 0, n1 = 45, n2 = -80;
+ 243              		.loc 1 48 5 is_stmt 1 view .LVU41
+  49:Core/Src/arm.c **** 
+  50:Core/Src/arm.c ****     for(int i=0; i<=50; i++)
+ 244              		.loc 1 50 5 view .LVU42
+ 245              	.LBB2:
+ 246              		.loc 1 50 9 view .LVU43
+ 247              		.loc 1 50 13 is_stmt 0 view .LVU44
+ 248 0018 0025     		movs	r5, #0
+ 249              		.loc 1 50 5 view .LVU45
+ 250 001a 55E0     		b	.L13
+ 251              	.LVL28:
+ 252              	.L14:
+ 253              	.LBB3:
+  51:Core/Src/arm.c ****     {
+  52:Core/Src/arm.c ****         float o0 = n0 + (t0 - n0)/50.0f * i;
+ 254              		.loc 1 52 9 is_stmt 1 view .LVU46
+ 255              		.loc 1 52 29 is_stmt 0 view .LVU47
+ 256 001c 334B     		ldr	r3, .L16+4
+ 257 001e D3F800A0 		ldr	r10, [r3]	@ float
+ 258 0022 5146     		mov	r1, r10
+ 259 0024 4846     		mov	r0, r9
+ 260 0026 FFF7FEFF 		bl	__aeabi_fsub
+ 261              	.LVL29:
+ 262              		.loc 1 52 34 view .LVU48
+ 263 002a 3149     		ldr	r1, .L16+8
+ 264 002c FFF7FEFF 		bl	__aeabi_fdiv
+ 265              	.LVL30:
+ 266 0030 0646     		mov	r6, r0
+ 267              		.loc 1 52 41 view .LVU49
+ 268 0032 2846     		mov	r0, r5
+ 269 0034 FFF7FEFF 		bl	__aeabi_i2f
+ 270              	.LVL31:
+ 271 0038 0446     		mov	r4, r0
+ 272 003a 0146     		mov	r1, r0
+ 273 003c 3046     		mov	r0, r6
+ 274 003e FFF7FEFF 		bl	__aeabi_fmul
+ 275              	.LVL32:
+ 276 0042 0146     		mov	r1, r0
+ 277              		.loc 1 52 15 view .LVU50
+ 278 0044 5046     		mov	r0, r10
+ 279 0046 FFF7FEFF 		bl	__aeabi_fadd
+ 280              	.LVL33:
+ 281 004a 8246     		mov	r10, r0
+ 282              	.LVL34:
+  53:Core/Src/arm.c ****         float o1 = n1 + (t1 - n1)/50.0f * i;
+ 283              		.loc 1 53 9 is_stmt 1 view .LVU51
+ 284              		.loc 1 53 29 is_stmt 0 view .LVU52
+ 285 004c 294B     		ldr	r3, .L16+12
+ 286 004e 1E68     		ldr	r6, [r3]	@ float
+ 287 0050 3146     		mov	r1, r6
+ 288 0052 4046     		mov	r0, r8
+ 289              	.LVL35:
+ 290              		.loc 1 53 29 view .LVU53
+ 291 0054 FFF7FEFF 		bl	__aeabi_fsub
+ 292              	.LVL36:
+ 293              		.loc 1 53 34 view .LVU54
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 7
+
+
+ 294 0058 2549     		ldr	r1, .L16+8
+ 295 005a FFF7FEFF 		bl	__aeabi_fdiv
+ 296              	.LVL37:
+ 297 005e 0146     		mov	r1, r0
+ 298              		.loc 1 53 41 view .LVU55
+ 299 0060 2046     		mov	r0, r4
+ 300 0062 FFF7FEFF 		bl	__aeabi_fmul
+ 301              	.LVL38:
+ 302 0066 0146     		mov	r1, r0
+ 303              		.loc 1 53 15 view .LVU56
+ 304 0068 3046     		mov	r0, r6
+ 305 006a FFF7FEFF 		bl	__aeabi_fadd
+ 306              	.LVL39:
+ 307 006e 0646     		mov	r6, r0
+ 308              	.LVL40:
+  54:Core/Src/arm.c ****         float o2 = n2 + (t2 - n2)/50.0f * i;
+ 309              		.loc 1 54 9 is_stmt 1 view .LVU57
+ 310              		.loc 1 54 29 is_stmt 0 view .LVU58
+ 311 0070 214B     		ldr	r3, .L16+16
+ 312 0072 D3F800B0 		ldr	fp, [r3]	@ float
+ 313 0076 5946     		mov	r1, fp
+ 314 0078 3846     		mov	r0, r7
+ 315              	.LVL41:
+ 316              		.loc 1 54 29 view .LVU59
+ 317 007a FFF7FEFF 		bl	__aeabi_fsub
+ 318              	.LVL42:
+ 319              		.loc 1 54 34 view .LVU60
+ 320 007e 1C49     		ldr	r1, .L16+8
+ 321 0080 FFF7FEFF 		bl	__aeabi_fdiv
+ 322              	.LVL43:
+ 323 0084 0146     		mov	r1, r0
+ 324              		.loc 1 54 41 view .LVU61
+ 325 0086 2046     		mov	r0, r4
+ 326 0088 FFF7FEFF 		bl	__aeabi_fmul
+ 327              	.LVL44:
+ 328 008c 0146     		mov	r1, r0
+ 329              		.loc 1 54 15 view .LVU62
+ 330 008e 5846     		mov	r0, fp
+ 331 0090 FFF7FEFF 		bl	__aeabi_fadd
+ 332              	.LVL45:
+ 333 0094 0446     		mov	r4, r0
+ 334              	.LVL46:
+  55:Core/Src/arm.c ****         Servo_SetAngle(0, o0 + 90);
+ 335              		.loc 1 55 9 is_stmt 1 view .LVU63
+ 336 0096 1949     		ldr	r1, .L16+20
+ 337 0098 5046     		mov	r0, r10
+ 338              	.LVL47:
+ 339              		.loc 1 55 9 is_stmt 0 view .LVU64
+ 340 009a FFF7FEFF 		bl	__aeabi_fadd
+ 341              	.LVL48:
+ 342 009e 0146     		mov	r1, r0
+ 343 00a0 0020     		movs	r0, #0
+ 344 00a2 FFF7FEFF 		bl	Servo_SetAngle
+ 345              	.LVL49:
+  56:Core/Src/arm.c ****         Servo_SetAngle(1, 90 - o1);
+ 346              		.loc 1 56 9 is_stmt 1 view .LVU65
+ 347 00a6 3146     		mov	r1, r6
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 8
+
+
+ 348 00a8 1448     		ldr	r0, .L16+20
+ 349 00aa FFF7FEFF 		bl	__aeabi_fsub
+ 350              	.LVL50:
+ 351 00ae 0146     		mov	r1, r0
+ 352 00b0 0120     		movs	r0, #1
+ 353 00b2 FFF7FEFF 		bl	Servo_SetAngle
+ 354              	.LVL51:
+  57:Core/Src/arm.c ****         Servo_SetAngle(2, -o2);
+ 355              		.loc 1 57 9 view .LVU66
+ 356 00b6 04F10041 		add	r1, r4, #-2147483648
+ 357 00ba 0220     		movs	r0, #2
+ 358 00bc FFF7FEFF 		bl	Servo_SetAngle
+ 359              	.LVL52:
+  58:Core/Src/arm.c ****         HAL_Delay(10);
+ 360              		.loc 1 58 9 view .LVU67
+ 361 00c0 0A20     		movs	r0, #10
+ 362 00c2 FFF7FEFF 		bl	HAL_Delay
+ 363              	.LVL53:
+ 364              	.LBE3:
+  50:Core/Src/arm.c ****     {
+ 365              		.loc 1 50 26 discriminator 3 view .LVU68
+ 366 00c6 0135     		adds	r5, r5, #1
+ 367              	.LVL54:
+ 368              	.L13:
+  50:Core/Src/arm.c ****     {
+ 369              		.loc 1 50 19 discriminator 1 view .LVU69
+ 370 00c8 322D     		cmp	r5, #50
+ 371 00ca A7DD     		ble	.L14
+ 372              	.LBE2:
+  59:Core/Src/arm.c ****     }
+  60:Core/Src/arm.c ****     n0 = t0; n1 = t1; n2 = t2;
+ 373              		.loc 1 60 5 view .LVU70
+ 374              		.loc 1 60 8 is_stmt 0 view .LVU71
+ 375 00cc 074B     		ldr	r3, .L16+4
+ 376 00ce C3F80090 		str	r9, [r3]	@ float
+ 377              		.loc 1 60 14 is_stmt 1 view .LVU72
+ 378              		.loc 1 60 17 is_stmt 0 view .LVU73
+ 379 00d2 084B     		ldr	r3, .L16+12
+ 380 00d4 C3F80080 		str	r8, [r3]	@ float
+ 381              		.loc 1 60 23 is_stmt 1 view .LVU74
+ 382              		.loc 1 60 26 is_stmt 0 view .LVU75
+ 383 00d8 074B     		ldr	r3, .L16+16
+ 384 00da 1F60     		str	r7, [r3]	@ float
+  61:Core/Src/arm.c ****     HAL_Delay(300);
+ 385              		.loc 1 61 5 is_stmt 1 view .LVU76
+ 386 00dc 4FF49670 		mov	r0, #300
+ 387 00e0 FFF7FEFF 		bl	HAL_Delay
+ 388              	.LVL55:
+  62:Core/Src/arm.c **** }
+ 389              		.loc 1 62 1 is_stmt 0 view .LVU77
+ 390 00e4 BDE8F88F 		pop	{r3, r4, r5, r6, r7, r8, r9, r10, fp, pc}
+ 391              	.LVL56:
+ 392              	.L17:
+ 393              		.loc 1 62 1 view .LVU78
+ 394              		.align	2
+ 395              	.L16:
+ 396 00e8 00000000 		.word	arm_points
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 9
+
+
+ 397 00ec 00000000 		.word	n0.2
+ 398 00f0 00004842 		.word	1112014848
+ 399 00f4 00000000 		.word	n1.1
+ 400 00f8 00000000 		.word	n2.0
+ 401 00fc 0000B442 		.word	1119092736
+ 402              		.cfi_endproc
+ 403              	.LFE68:
+ 405              		.section	.text.Magnet_On,"ax",%progbits
+ 406              		.align	1
+ 407              		.global	Magnet_On
+ 408              		.syntax unified
+ 409              		.thumb
+ 410              		.thumb_func
+ 412              	Magnet_On:
+ 413              	.LFB71:
+  63:Core/Src/arm.c **** 
+  64:Core/Src/arm.c **** void Arm_PickSequence(uint8_t goods_index)
+  65:Core/Src/arm.c **** {
+  66:Core/Src/arm.c ****     ArmPoint pick_point = ARM_POINT_PICK_A + goods_index;
+  67:Core/Src/arm.c ****     // 1. 移动到抓取位
+  68:Core/Src/arm.c ****     Arm_MoveToPoint(pick_point);
+  69:Core/Src/arm.c ****     HAL_Delay(200);
+  70:Core/Src/arm.c ****     // 2. 视觉发送对准完成信号，此处简化，直接吸
+  71:Core/Src/arm.c ****     Magnet_On();
+  72:Core/Src/arm.c ****     HAL_Delay(200);
+  73:Core/Src/arm.c ****     // 3. 回到存储位
+  74:Core/Src/arm.c ****     Arm_MoveToPoint(ARM_POINT_STORE);
+  75:Core/Src/arm.c ****     Magnet_Off();   // 放在暂存区
+  76:Core/Src/arm.c ****     HAL_Delay(200);
+  77:Core/Src/arm.c ****     arm_done = 1;
+  78:Core/Src/arm.c ****     if(done_callback) done_callback();
+  79:Core/Src/arm.c **** }
+  80:Core/Src/arm.c **** 
+  81:Core/Src/arm.c **** void Arm_DropSequence(void)
+  82:Core/Src/arm.c **** {
+  83:Core/Src/arm.c ****     // 从存储位吸起货物
+  84:Core/Src/arm.c ****     Arm_MoveToPoint(ARM_POINT_STORE);
+  85:Core/Src/arm.c ****     Magnet_On();
+  86:Core/Src/arm.c ****     HAL_Delay(300);
+  87:Core/Src/arm.c ****     // 移动到卸货位
+  88:Core/Src/arm.c ****     Arm_MoveToPoint(ARM_POINT_DROP);
+  89:Core/Src/arm.c ****     HAL_Delay(200);
+  90:Core/Src/arm.c ****     Magnet_Off();
+  91:Core/Src/arm.c ****     HAL_Delay(150);
+  92:Core/Src/arm.c ****     // 抖一抖
+  93:Core/Src/arm.c ****     for(int k=0;k<2;k++){
+  94:Core/Src/arm.c ****         Magnet_On(); HAL_Delay(10);
+  95:Core/Src/arm.c ****         Magnet_Off(); HAL_Delay(30);
+  96:Core/Src/arm.c ****     }
+  97:Core/Src/arm.c ****     Arm_MoveToPoint(ARM_POINT_RESET);
+  98:Core/Src/arm.c ****     arm_done = 1;
+  99:Core/Src/arm.c ****     if(done_callback) done_callback();
+ 100:Core/Src/arm.c **** }
+ 101:Core/Src/arm.c **** 
+ 102:Core/Src/arm.c **** void Magnet_On(void)  { HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, GPIO_PIN_SET); }
+ 414              		.loc 1 102 23 is_stmt 1 view -0
+ 415              		.cfi_startproc
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 10
+
+
+ 416              		@ args = 0, pretend = 0, frame = 0
+ 417              		@ frame_needed = 0, uses_anonymous_args = 0
+ 418 0000 08B5     		push	{r3, lr}
+ 419              	.LCFI7:
+ 420              		.cfi_def_cfa_offset 8
+ 421              		.cfi_offset 3, -8
+ 422              		.cfi_offset 14, -4
+ 423              		.loc 1 102 25 view .LVU80
+ 424 0002 0122     		movs	r2, #1
+ 425 0004 4FF48051 		mov	r1, #4096
+ 426 0008 0148     		ldr	r0, .L20
+ 427 000a FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 428              	.LVL57:
+ 429              		.loc 1 102 78 is_stmt 0 view .LVU81
+ 430 000e 08BD     		pop	{r3, pc}
+ 431              	.L21:
+ 432              		.align	2
+ 433              	.L20:
+ 434 0010 00100140 		.word	1073811456
+ 435              		.cfi_endproc
+ 436              	.LFE71:
+ 438              		.section	.text.Magnet_Off,"ax",%progbits
+ 439              		.align	1
+ 440              		.global	Magnet_Off
+ 441              		.syntax unified
+ 442              		.thumb
+ 443              		.thumb_func
+ 445              	Magnet_Off:
+ 446              	.LFB72:
+ 103:Core/Src/arm.c **** void Magnet_Off(void) { HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, GPIO_PIN_RESET); }
+ 447              		.loc 1 103 23 is_stmt 1 view -0
+ 448              		.cfi_startproc
+ 449              		@ args = 0, pretend = 0, frame = 0
+ 450              		@ frame_needed = 0, uses_anonymous_args = 0
+ 451 0000 08B5     		push	{r3, lr}
+ 452              	.LCFI8:
+ 453              		.cfi_def_cfa_offset 8
+ 454              		.cfi_offset 3, -8
+ 455              		.cfi_offset 14, -4
+ 456              		.loc 1 103 25 view .LVU83
+ 457 0002 0022     		movs	r2, #0
+ 458 0004 4FF48051 		mov	r1, #4096
+ 459 0008 0148     		ldr	r0, .L24
+ 460 000a FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 461              	.LVL58:
+ 462              		.loc 1 103 80 is_stmt 0 view .LVU84
+ 463 000e 08BD     		pop	{r3, pc}
+ 464              	.L25:
+ 465              		.align	2
+ 466              	.L24:
+ 467 0010 00100140 		.word	1073811456
+ 468              		.cfi_endproc
+ 469              	.LFE72:
+ 471              		.section	.text.Arm_Init,"ax",%progbits
+ 472              		.align	1
+ 473              		.global	Arm_Init
+ 474              		.syntax unified
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 11
+
+
+ 475              		.thumb
+ 476              		.thumb_func
+ 478              	Arm_Init:
+ 479              	.LFB67:
+  34:Core/Src/arm.c ****     HAL_Delay(100);
+ 480              		.loc 1 34 1 is_stmt 1 view -0
+ 481              		.cfi_startproc
+ 482              		@ args = 0, pretend = 0, frame = 0
+ 483              		@ frame_needed = 0, uses_anonymous_args = 0
+ 484 0000 08B5     		push	{r3, lr}
+ 485              	.LCFI9:
+ 486              		.cfi_def_cfa_offset 8
+ 487              		.cfi_offset 3, -8
+ 488              		.cfi_offset 14, -4
+  35:Core/Src/arm.c ****     PCA9685_Write(0x00, 0x10);
+ 489              		.loc 1 35 5 view .LVU86
+ 490 0002 6420     		movs	r0, #100
+ 491 0004 FFF7FEFF 		bl	HAL_Delay
+ 492              	.LVL59:
+  36:Core/Src/arm.c ****     PCA9685_Write(0xFE, 121);
+ 493              		.loc 1 36 5 view .LVU87
+ 494 0008 1021     		movs	r1, #16
+ 495 000a 0020     		movs	r0, #0
+ 496 000c FFF7FEFF 		bl	PCA9685_Write
+ 497              	.LVL60:
+  37:Core/Src/arm.c ****     PCA9685_Write(0x00, 0x20);
+ 498              		.loc 1 37 5 view .LVU88
+ 499 0010 7921     		movs	r1, #121
+ 500 0012 FE20     		movs	r0, #254
+ 501 0014 FFF7FEFF 		bl	PCA9685_Write
+ 502              	.LVL61:
+  38:Core/Src/arm.c ****     Arm_MoveToPoint(ARM_POINT_RESET);
+ 503              		.loc 1 38 5 view .LVU89
+ 504 0018 2021     		movs	r1, #32
+ 505 001a 0020     		movs	r0, #0
+ 506 001c FFF7FEFF 		bl	PCA9685_Write
+ 507              	.LVL62:
+  39:Core/Src/arm.c ****     Magnet_Off();
+ 508              		.loc 1 39 5 view .LVU90
+ 509 0020 0020     		movs	r0, #0
+ 510 0022 FFF7FEFF 		bl	Arm_MoveToPoint
+ 511              	.LVL63:
+  40:Core/Src/arm.c **** }
+ 512              		.loc 1 40 5 view .LVU91
+ 513 0026 FFF7FEFF 		bl	Magnet_Off
+ 514              	.LVL64:
+  41:Core/Src/arm.c **** 
+ 515              		.loc 1 41 1 is_stmt 0 view .LVU92
+ 516 002a 08BD     		pop	{r3, pc}
+ 517              		.cfi_endproc
+ 518              	.LFE67:
+ 520              		.section	.text.Arm_PickSequence,"ax",%progbits
+ 521              		.align	1
+ 522              		.global	Arm_PickSequence
+ 523              		.syntax unified
+ 524              		.thumb
+ 525              		.thumb_func
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 12
+
+
+ 527              	Arm_PickSequence:
+ 528              	.LVL65:
+ 529              	.LFB69:
+  65:Core/Src/arm.c ****     ArmPoint pick_point = ARM_POINT_PICK_A + goods_index;
+ 530              		.loc 1 65 1 is_stmt 1 view -0
+ 531              		.cfi_startproc
+ 532              		@ args = 0, pretend = 0, frame = 0
+ 533              		@ frame_needed = 0, uses_anonymous_args = 0
+  65:Core/Src/arm.c ****     ArmPoint pick_point = ARM_POINT_PICK_A + goods_index;
+ 534              		.loc 1 65 1 is_stmt 0 view .LVU94
+ 535 0000 08B5     		push	{r3, lr}
+ 536              	.LCFI10:
+ 537              		.cfi_def_cfa_offset 8
+ 538              		.cfi_offset 3, -8
+ 539              		.cfi_offset 14, -4
+  66:Core/Src/arm.c ****     // 1. 移动到抓取位
+ 540              		.loc 1 66 5 is_stmt 1 view .LVU95
+  66:Core/Src/arm.c ****     // 1. 移动到抓取位
+ 541              		.loc 1 66 14 is_stmt 0 view .LVU96
+ 542 0002 0230     		adds	r0, r0, #2
+ 543              	.LVL66:
+  68:Core/Src/arm.c ****     HAL_Delay(200);
+ 544              		.loc 1 68 5 is_stmt 1 view .LVU97
+ 545 0004 C0B2     		uxtb	r0, r0
+ 546              	.LVL67:
+  68:Core/Src/arm.c ****     HAL_Delay(200);
+ 547              		.loc 1 68 5 is_stmt 0 view .LVU98
+ 548 0006 FFF7FEFF 		bl	Arm_MoveToPoint
+ 549              	.LVL68:
+  69:Core/Src/arm.c ****     // 2. 视觉发送对准完成信号，此处简化，直接吸
+ 550              		.loc 1 69 5 is_stmt 1 view .LVU99
+ 551 000a C820     		movs	r0, #200
+ 552 000c FFF7FEFF 		bl	HAL_Delay
+ 553              	.LVL69:
+  71:Core/Src/arm.c ****     HAL_Delay(200);
+ 554              		.loc 1 71 5 view .LVU100
+ 555 0010 FFF7FEFF 		bl	Magnet_On
+ 556              	.LVL70:
+  72:Core/Src/arm.c ****     // 3. 回到存储位
+ 557              		.loc 1 72 5 view .LVU101
+ 558 0014 C820     		movs	r0, #200
+ 559 0016 FFF7FEFF 		bl	HAL_Delay
+ 560              	.LVL71:
+  74:Core/Src/arm.c ****     Magnet_Off();   // 放在暂存区
+ 561              		.loc 1 74 5 view .LVU102
+ 562 001a 0520     		movs	r0, #5
+ 563 001c FFF7FEFF 		bl	Arm_MoveToPoint
+ 564              	.LVL72:
+  75:Core/Src/arm.c ****     HAL_Delay(200);
+ 565              		.loc 1 75 5 view .LVU103
+ 566 0020 FFF7FEFF 		bl	Magnet_Off
+ 567              	.LVL73:
+  76:Core/Src/arm.c ****     arm_done = 1;
+ 568              		.loc 1 76 5 view .LVU104
+ 569 0024 C820     		movs	r0, #200
+ 570 0026 FFF7FEFF 		bl	HAL_Delay
+ 571              	.LVL74:
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 13
+
+
+  77:Core/Src/arm.c ****     if(done_callback) done_callback();
+ 572              		.loc 1 77 5 view .LVU105
+  77:Core/Src/arm.c ****     if(done_callback) done_callback();
+ 573              		.loc 1 77 14 is_stmt 0 view .LVU106
+ 574 002a 044B     		ldr	r3, .L31
+ 575 002c 0122     		movs	r2, #1
+ 576 002e 1A70     		strb	r2, [r3]
+  78:Core/Src/arm.c **** }
+ 577              		.loc 1 78 5 is_stmt 1 view .LVU107
+  78:Core/Src/arm.c **** }
+ 578              		.loc 1 78 8 is_stmt 0 view .LVU108
+ 579 0030 034B     		ldr	r3, .L31+4
+ 580 0032 1B68     		ldr	r3, [r3]
+  78:Core/Src/arm.c **** }
+ 581              		.loc 1 78 7 view .LVU109
+ 582 0034 03B1     		cbz	r3, .L28
+  78:Core/Src/arm.c **** }
+ 583              		.loc 1 78 23 is_stmt 1 discriminator 1 view .LVU110
+ 584 0036 9847     		blx	r3
+ 585              	.LVL75:
+ 586              	.L28:
+  79:Core/Src/arm.c **** 
+ 587              		.loc 1 79 1 is_stmt 0 view .LVU111
+ 588 0038 08BD     		pop	{r3, pc}
+ 589              	.L32:
+ 590 003a 00BF     		.align	2
+ 591              	.L31:
+ 592 003c 00000000 		.word	arm_done
+ 593 0040 00000000 		.word	done_callback
+ 594              		.cfi_endproc
+ 595              	.LFE69:
+ 597              		.section	.text.Arm_DropSequence,"ax",%progbits
+ 598              		.align	1
+ 599              		.global	Arm_DropSequence
+ 600              		.syntax unified
+ 601              		.thumb
+ 602              		.thumb_func
+ 604              	Arm_DropSequence:
+ 605              	.LFB70:
+  82:Core/Src/arm.c ****     // 从存储位吸起货物
+ 606              		.loc 1 82 1 is_stmt 1 view -0
+ 607              		.cfi_startproc
+ 608              		@ args = 0, pretend = 0, frame = 0
+ 609              		@ frame_needed = 0, uses_anonymous_args = 0
+ 610 0000 10B5     		push	{r4, lr}
+ 611              	.LCFI11:
+ 612              		.cfi_def_cfa_offset 8
+ 613              		.cfi_offset 4, -8
+ 614              		.cfi_offset 14, -4
+  84:Core/Src/arm.c ****     Magnet_On();
+ 615              		.loc 1 84 5 view .LVU113
+ 616 0002 0520     		movs	r0, #5
+ 617 0004 FFF7FEFF 		bl	Arm_MoveToPoint
+ 618              	.LVL76:
+  85:Core/Src/arm.c ****     HAL_Delay(300);
+ 619              		.loc 1 85 5 view .LVU114
+ 620 0008 FFF7FEFF 		bl	Magnet_On
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 14
+
+
+ 621              	.LVL77:
+  86:Core/Src/arm.c ****     // 移动到卸货位
+ 622              		.loc 1 86 5 view .LVU115
+ 623 000c 4FF49670 		mov	r0, #300
+ 624 0010 FFF7FEFF 		bl	HAL_Delay
+ 625              	.LVL78:
+  88:Core/Src/arm.c ****     HAL_Delay(200);
+ 626              		.loc 1 88 5 view .LVU116
+ 627 0014 0620     		movs	r0, #6
+ 628 0016 FFF7FEFF 		bl	Arm_MoveToPoint
+ 629              	.LVL79:
+  89:Core/Src/arm.c ****     Magnet_Off();
+ 630              		.loc 1 89 5 view .LVU117
+ 631 001a C820     		movs	r0, #200
+ 632 001c FFF7FEFF 		bl	HAL_Delay
+ 633              	.LVL80:
+  90:Core/Src/arm.c ****     HAL_Delay(150);
+ 634              		.loc 1 90 5 view .LVU118
+ 635 0020 FFF7FEFF 		bl	Magnet_Off
+ 636              	.LVL81:
+  91:Core/Src/arm.c ****     // 抖一抖
+ 637              		.loc 1 91 5 view .LVU119
+ 638 0024 9620     		movs	r0, #150
+ 639 0026 FFF7FEFF 		bl	HAL_Delay
+ 640              	.LVL82:
+  93:Core/Src/arm.c ****         Magnet_On(); HAL_Delay(10);
+ 641              		.loc 1 93 5 view .LVU120
+ 642              	.LBB4:
+  93:Core/Src/arm.c ****         Magnet_On(); HAL_Delay(10);
+ 643              		.loc 1 93 9 view .LVU121
+  93:Core/Src/arm.c ****         Magnet_On(); HAL_Delay(10);
+ 644              		.loc 1 93 13 is_stmt 0 view .LVU122
+ 645 002a 0024     		movs	r4, #0
+  93:Core/Src/arm.c ****         Magnet_On(); HAL_Delay(10);
+ 646              		.loc 1 93 5 view .LVU123
+ 647 002c 0AE0     		b	.L34
+ 648              	.LVL83:
+ 649              	.L35:
+  94:Core/Src/arm.c ****         Magnet_Off(); HAL_Delay(30);
+ 650              		.loc 1 94 9 is_stmt 1 view .LVU124
+ 651 002e FFF7FEFF 		bl	Magnet_On
+ 652              	.LVL84:
+  94:Core/Src/arm.c ****         Magnet_Off(); HAL_Delay(30);
+ 653              		.loc 1 94 22 discriminator 1 view .LVU125
+ 654 0032 0A20     		movs	r0, #10
+ 655 0034 FFF7FEFF 		bl	HAL_Delay
+ 656              	.LVL85:
+  95:Core/Src/arm.c ****     }
+ 657              		.loc 1 95 9 view .LVU126
+ 658 0038 FFF7FEFF 		bl	Magnet_Off
+ 659              	.LVL86:
+  95:Core/Src/arm.c ****     }
+ 660              		.loc 1 95 23 discriminator 1 view .LVU127
+ 661 003c 1E20     		movs	r0, #30
+ 662 003e FFF7FEFF 		bl	HAL_Delay
+ 663              	.LVL87:
+  93:Core/Src/arm.c ****         Magnet_On(); HAL_Delay(10);
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 15
+
+
+ 664              		.loc 1 93 22 discriminator 3 view .LVU128
+ 665 0042 0134     		adds	r4, r4, #1
+ 666              	.LVL88:
+ 667              	.L34:
+  93:Core/Src/arm.c ****         Magnet_On(); HAL_Delay(10);
+ 668              		.loc 1 93 18 discriminator 1 view .LVU129
+ 669 0044 012C     		cmp	r4, #1
+ 670 0046 F2DD     		ble	.L35
+ 671              	.LBE4:
+  97:Core/Src/arm.c ****     arm_done = 1;
+ 672              		.loc 1 97 5 view .LVU130
+ 673 0048 0020     		movs	r0, #0
+ 674 004a FFF7FEFF 		bl	Arm_MoveToPoint
+ 675              	.LVL89:
+  98:Core/Src/arm.c ****     if(done_callback) done_callback();
+ 676              		.loc 1 98 5 view .LVU131
+  98:Core/Src/arm.c ****     if(done_callback) done_callback();
+ 677              		.loc 1 98 14 is_stmt 0 view .LVU132
+ 678 004e 044B     		ldr	r3, .L38
+ 679 0050 0122     		movs	r2, #1
+ 680 0052 1A70     		strb	r2, [r3]
+  99:Core/Src/arm.c **** }
+ 681              		.loc 1 99 5 is_stmt 1 view .LVU133
+  99:Core/Src/arm.c **** }
+ 682              		.loc 1 99 8 is_stmt 0 view .LVU134
+ 683 0054 034B     		ldr	r3, .L38+4
+ 684 0056 1B68     		ldr	r3, [r3]
+  99:Core/Src/arm.c **** }
+ 685              		.loc 1 99 7 view .LVU135
+ 686 0058 03B1     		cbz	r3, .L33
+  99:Core/Src/arm.c **** }
+ 687              		.loc 1 99 23 is_stmt 1 discriminator 1 view .LVU136
+ 688 005a 9847     		blx	r3
+ 689              	.LVL90:
+ 690              	.L33:
+ 100:Core/Src/arm.c **** 
+ 691              		.loc 1 100 1 is_stmt 0 view .LVU137
+ 692 005c 10BD     		pop	{r4, pc}
+ 693              	.LVL91:
+ 694              	.L39:
+ 100:Core/Src/arm.c **** 
+ 695              		.loc 1 100 1 view .LVU138
+ 696 005e 00BF     		.align	2
+ 697              	.L38:
+ 698 0060 00000000 		.word	arm_done
+ 699 0064 00000000 		.word	done_callback
+ 700              		.cfi_endproc
+ 701              	.LFE70:
+ 703              		.section	.text.Arm_SetDoneCallback,"ax",%progbits
+ 704              		.align	1
+ 705              		.global	Arm_SetDoneCallback
+ 706              		.syntax unified
+ 707              		.thumb
+ 708              		.thumb_func
+ 710              	Arm_SetDoneCallback:
+ 711              	.LVL92:
+ 712              	.LFB73:
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 16
+
+
+ 104:Core/Src/arm.c **** 
+ 105:Core/Src/arm.c **** void Arm_SetDoneCallback(void (*cb)(void)) 
+ 106:Core/Src/arm.c **** { 
+ 713              		.loc 1 106 1 is_stmt 1 view -0
+ 714              		.cfi_startproc
+ 715              		@ args = 0, pretend = 0, frame = 0
+ 716              		@ frame_needed = 0, uses_anonymous_args = 0
+ 717              		@ link register save eliminated.
+ 107:Core/Src/arm.c ****     done_callback = cb; 
+ 718              		.loc 1 107 5 view .LVU140
+ 719              		.loc 1 107 19 is_stmt 0 view .LVU141
+ 720 0000 014B     		ldr	r3, .L41
+ 721 0002 1860     		str	r0, [r3]
+ 108:Core/Src/arm.c **** }
+ 722              		.loc 1 108 1 view .LVU142
+ 723 0004 7047     		bx	lr
+ 724              	.L42:
+ 725 0006 00BF     		.align	2
+ 726              	.L41:
+ 727 0008 00000000 		.word	done_callback
+ 728              		.cfi_endproc
+ 729              	.LFE73:
+ 731              		.section	.text.Arm_IsDone,"ax",%progbits
+ 732              		.align	1
+ 733              		.global	Arm_IsDone
+ 734              		.syntax unified
+ 735              		.thumb
+ 736              		.thumb_func
+ 738              	Arm_IsDone:
+ 739              	.LFB74:
+ 109:Core/Src/arm.c **** uint8_t Arm_IsDone(void)
+ 110:Core/Src/arm.c **** {
+ 740              		.loc 1 110 1 is_stmt 1 view -0
+ 741              		.cfi_startproc
+ 742              		@ args = 0, pretend = 0, frame = 0
+ 743              		@ frame_needed = 0, uses_anonymous_args = 0
+ 744              		@ link register save eliminated.
+ 111:Core/Src/arm.c ****      return arm_done;
+ 745              		.loc 1 111 6 view .LVU144
+ 112:Core/Src/arm.c **** }
+ 746              		.loc 1 112 1 is_stmt 0 view .LVU145
+ 747 0000 014B     		ldr	r3, .L44
+ 748 0002 1878     		ldrb	r0, [r3]	@ zero_extendqisi2
+ 749 0004 7047     		bx	lr
+ 750              	.L45:
+ 751 0006 00BF     		.align	2
+ 752              	.L44:
+ 753 0008 00000000 		.word	arm_done
+ 754              		.cfi_endproc
+ 755              	.LFE74:
+ 757              		.section	.text.Arm_ClearDoneFlag,"ax",%progbits
+ 758              		.align	1
+ 759              		.global	Arm_ClearDoneFlag
+ 760              		.syntax unified
+ 761              		.thumb
+ 762              		.thumb_func
+ 764              	Arm_ClearDoneFlag:
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 17
+
+
+ 765              	.LFB75:
+ 113:Core/Src/arm.c **** void Arm_ClearDoneFlag(void)
+ 114:Core/Src/arm.c **** { 
+ 766              		.loc 1 114 1 is_stmt 1 view -0
+ 767              		.cfi_startproc
+ 768              		@ args = 0, pretend = 0, frame = 0
+ 769              		@ frame_needed = 0, uses_anonymous_args = 0
+ 770              		@ link register save eliminated.
+ 115:Core/Src/arm.c ****     arm_done = 0; 
+ 771              		.loc 1 115 5 view .LVU147
+ 772              		.loc 1 115 14 is_stmt 0 view .LVU148
+ 773 0000 014B     		ldr	r3, .L47
+ 774 0002 0022     		movs	r2, #0
+ 775 0004 1A70     		strb	r2, [r3]
+ 116:Core/Src/arm.c **** }...
+ 776              		.loc 1 116 1 view .LVU149
+ 777 0006 7047     		bx	lr
+ 778              	.L48:
+ 779              		.align	2
+ 780              	.L47:
+ 781 0008 00000000 		.word	arm_done
+ 782              		.cfi_endproc
+ 783              	.LFE75:
+ 785              		.section	.data.n2.0,"aw"
+ 786              		.align	2
+ 789              	n2.0:
+ 790 0000 0000A0C2 		.word	-1029701632
+ 791              		.section	.data.n1.1,"aw"
+ 792              		.align	2
+ 795              	n1.1:
+ 796 0000 00003442 		.word	1110704128
+ 797              		.section	.bss.n0.2,"aw",%nobits
+ 798              		.align	2
+ 801              	n0.2:
+ 802 0000 00000000 		.space	4
+ 803              		.section	.bss.done_callback,"aw",%nobits
+ 804              		.align	2
+ 807              	done_callback:
+ 808 0000 00000000 		.space	4
+ 809              		.section	.bss.arm_done,"aw",%nobits
+ 812              	arm_done:
+ 813 0000 00       		.space	1
+ 814              		.section	.rodata.arm_points,"a"
+ 815              		.align	2
+ 818              	arm_points:
+ 819 0000 00000000 		.word	0
+ 820 0004 00003442 		.word	1110704128
+ 821 0008 0000A0C2 		.word	-1029701632
+ 822 000c 0000B442 		.word	1119092736
+ 823 0010 00000000 		.word	0
+ 824 0014 0000A0C2 		.word	-1029701632
+ 825 0018 0000B442 		.word	1119092736
+ 826 001c 0000F041 		.word	1106247680
+ 827 0020 0000F0C1 		.word	-1041235968
+ 828 0024 0000B442 		.word	1119092736
+ 829 0028 0000F041 		.word	1106247680
+ 830 002c 0000F0C1 		.word	-1041235968
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 18
+
+
+ 831 0030 0000B442 		.word	1119092736
+ 832 0034 0000F041 		.word	1106247680
+ 833 0038 0000F0C1 		.word	-1041235968
+ 834 003c 0000B442 		.word	1119092736
+ 835 0040 0000F041 		.word	1106247680
+ 836 0044 0000F0C1 		.word	-1041235968
+ 837 0048 0000B442 		.word	1119092736
+ 838 004c 0000A042 		.word	1117782016
+ 839 0050 0000F0C1 		.word	-1041235968
+ 840              		.text
+ 841              	.Letext0:
+ 842              		.file 2 "C:/arm-gnu-toolchain-15.2.rel1-mingw-w64-x86_64-arm-none-eabi/arm-none-eabi/include/machi
+ 843              		.file 3 "C:/arm-gnu-toolchain-15.2.rel1-mingw-w64-x86_64-arm-none-eabi/arm-none-eabi/include/sys/_
+ 844              		.file 4 "Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xe.h"
+ 845              		.file 5 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_def.h"
+ 846              		.file 6 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio.h"
+ 847              		.file 7 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_dma.h"
+ 848              		.file 8 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_i2c.h"
+ 849              		.file 9 "Core/Inc/arm.h"
+ 850              		.file 10 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h"
+ 851              		.file 11 "Core/Inc/i2c.h"
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 19
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 arm.c
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:19     .text.PCA9685_Write:00000000 $t
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:25     .text.PCA9685_Write:00000000 PCA9685_Write
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:68     .text.PCA9685_Write:00000024 $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:73     .text.Servo_SetAngle:00000000 $t
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:79     .text.Servo_SetAngle:00000000 Servo_SetAngle
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:192    .text.Servo_SetAngle:00000078 $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:201    .text.Arm_MoveToPoint:00000000 $t
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:207    .text.Arm_MoveToPoint:00000000 Arm_MoveToPoint
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:396    .text.Arm_MoveToPoint:000000e8 $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:818    .rodata.arm_points:00000000 arm_points
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:801    .bss.n0.2:00000000 n0.2
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:795    .data.n1.1:00000000 n1.1
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:789    .data.n2.0:00000000 n2.0
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:406    .text.Magnet_On:00000000 $t
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:412    .text.Magnet_On:00000000 Magnet_On
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:434    .text.Magnet_On:00000010 $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:439    .text.Magnet_Off:00000000 $t
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:445    .text.Magnet_Off:00000000 Magnet_Off
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:467    .text.Magnet_Off:00000010 $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:472    .text.Arm_Init:00000000 $t
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:478    .text.Arm_Init:00000000 Arm_Init
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:521    .text.Arm_PickSequence:00000000 $t
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:527    .text.Arm_PickSequence:00000000 Arm_PickSequence
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:592    .text.Arm_PickSequence:0000003c $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:812    .bss.arm_done:00000000 arm_done
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:807    .bss.done_callback:00000000 done_callback
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:598    .text.Arm_DropSequence:00000000 $t
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:604    .text.Arm_DropSequence:00000000 Arm_DropSequence
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:698    .text.Arm_DropSequence:00000060 $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:704    .text.Arm_SetDoneCallback:00000000 $t
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:710    .text.Arm_SetDoneCallback:00000000 Arm_SetDoneCallback
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:727    .text.Arm_SetDoneCallback:00000008 $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:732    .text.Arm_IsDone:00000000 $t
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:738    .text.Arm_IsDone:00000000 Arm_IsDone
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:753    .text.Arm_IsDone:00000008 $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:758    .text.Arm_ClearDoneFlag:00000000 $t
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:764    .text.Arm_ClearDoneFlag:00000000 Arm_ClearDoneFlag
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:781    .text.Arm_ClearDoneFlag:00000008 $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:786    .data.n2.0:00000000 $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:792    .data.n1.1:00000000 $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:798    .bss.n0.2:00000000 $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:804    .bss.done_callback:00000000 $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:813    .bss.arm_done:00000000 $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s:815    .rodata.arm_points:00000000 $d
+
+UNDEFINED SYMBOLS
+HAL_I2C_Mem_Write
+hi2c1
+__aeabi_fcmpgt
+__aeabi_fcmplt
+__aeabi_fdiv
+__aeabi_fmul
+__aeabi_fadd
+__aeabi_f2uiz
+__aeabi_fsub
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccMwiIJi.s 			page 20
+
+
+__aeabi_i2f
+HAL_Delay
+HAL_GPIO_WritePin

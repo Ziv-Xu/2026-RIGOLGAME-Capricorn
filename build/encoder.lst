@@ -1,0 +1,398 @@
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 1
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"encoder.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "Core/Src/encoder.c"
+  18              		.section	.text.Encoder_Init,"ax",%progbits
+  19              		.align	1
+  20              		.global	Encoder_Init
+  21              		.syntax unified
+  22              		.thumb
+  23              		.thumb_func
+  25              	Encoder_Init:
+  26              	.LFB65:
+   1:Core/Src/encoder.c **** #include "encoder.h"
+   2:Core/Src/encoder.c **** #include <stdlib.h>
+   3:Core/Src/encoder.c **** 
+   4:Core/Src/encoder.c **** #define WHEEL_DIAMETER  65.0f
+   5:Core/Src/encoder.c **** #define ENCODER_LINES   13
+   6:Core/Src/encoder.c **** #define GEAR_RATIO      30
+   7:Core/Src/encoder.c **** #define PULSE_PER_ROUND (ENCODER_LINES * GEAR_RATIO * 4)
+   8:Core/Src/encoder.c **** #define MM_PER_PULSE    (3.1415926f * WHEEL_DIAMETER / PULSE_PER_ROUND)
+   9:Core/Src/encoder.c **** 
+  10:Core/Src/encoder.c **** extern TIM_HandleTypeDef htim3;
+  11:Core/Src/encoder.c **** extern TIM_HandleTypeDef htim4;
+  12:Core/Src/encoder.c **** 
+  13:Core/Src/encoder.c **** static int32_t g_encoder_distance = 0;      // 有符号距离（前进+，后退-）
+  14:Core/Src/encoder.c **** static int32_t g_abs_distance = 0;          // 绝对行驶距离
+  15:Core/Src/encoder.c **** 
+  16:Core/Src/encoder.c **** void Encoder_Init(void)
+  17:Core/Src/encoder.c **** {
+  27              		.loc 1 17 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  31 0000 08B5     		push	{r3, lr}
+  32              	.LCFI0:
+  33              		.cfi_def_cfa_offset 8
+  34              		.cfi_offset 3, -8
+  35              		.cfi_offset 14, -4
+  18:Core/Src/encoder.c ****     HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
+  36              		.loc 1 18 5 view .LVU1
+  37 0002 3C21     		movs	r1, #60
+  38 0004 0648     		ldr	r0, .L3
+  39 0006 FFF7FEFF 		bl	HAL_TIM_Encoder_Start
+  40              	.LVL0:
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s 			page 2
+
+
+  19:Core/Src/encoder.c ****     HAL_TIM_Encoder_Start(&htim4, TIM_CHANNEL_ALL);
+  41              		.loc 1 19 5 view .LVU2
+  42 000a 3C21     		movs	r1, #60
+  43 000c 0548     		ldr	r0, .L3+4
+  44 000e FFF7FEFF 		bl	HAL_TIM_Encoder_Start
+  45              	.LVL1:
+  20:Core/Src/encoder.c ****     g_encoder_distance = 0;
+  46              		.loc 1 20 5 view .LVU3
+  47              		.loc 1 20 24 is_stmt 0 view .LVU4
+  48 0012 0023     		movs	r3, #0
+  49 0014 044A     		ldr	r2, .L3+8
+  50 0016 1360     		str	r3, [r2]
+  21:Core/Src/encoder.c ****     g_abs_distance = 0;
+  51              		.loc 1 21 5 is_stmt 1 view .LVU5
+  52              		.loc 1 21 20 is_stmt 0 view .LVU6
+  53 0018 044A     		ldr	r2, .L3+12
+  54 001a 1360     		str	r3, [r2]
+  22:Core/Src/encoder.c **** }
+  55              		.loc 1 22 1 view .LVU7
+  56 001c 08BD     		pop	{r3, pc}
+  57              	.L4:
+  58 001e 00BF     		.align	2
+  59              	.L3:
+  60 0020 00000000 		.word	htim3
+  61 0024 00000000 		.word	htim4
+  62 0028 00000000 		.word	g_encoder_distance
+  63 002c 00000000 		.word	g_abs_distance
+  64              		.cfi_endproc
+  65              	.LFE65:
+  67              		.section	.text.Encoder_Update,"ax",%progbits
+  68              		.align	1
+  69              		.global	Encoder_Update
+  70              		.syntax unified
+  71              		.thumb
+  72              		.thumb_func
+  74              	Encoder_Update:
+  75              	.LFB66:
+  23:Core/Src/encoder.c **** 
+  24:Core/Src/encoder.c **** void Encoder_Update(void)
+  25:Core/Src/encoder.c **** {
+  76              		.loc 1 25 1 is_stmt 1 view -0
+  77              		.cfi_startproc
+  78              		@ args = 0, pretend = 0, frame = 0
+  79              		@ frame_needed = 0, uses_anonymous_args = 0
+  80 0000 38B5     		push	{r3, r4, r5, lr}
+  81              	.LCFI1:
+  82              		.cfi_def_cfa_offset 16
+  83              		.cfi_offset 3, -16
+  84              		.cfi_offset 4, -12
+  85              		.cfi_offset 5, -8
+  86              		.cfi_offset 14, -4
+  26:Core/Src/encoder.c ****     int16_t left = (int16_t)__HAL_TIM_GET_COUNTER(&htim3);
+  87              		.loc 1 26 5 view .LVU9
+  88              		.loc 1 26 29 is_stmt 0 view .LVU10
+  89 0002 224B     		ldr	r3, .L9
+  90 0004 1968     		ldr	r1, [r3]
+  91 0006 4D6A     		ldr	r5, [r1, #36]
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s 			page 3
+
+
+  92              		.loc 1 26 13 view .LVU11
+  93 0008 2DB2     		sxth	r5, r5
+  94              	.LVL2:
+  27:Core/Src/encoder.c ****     int16_t right = (int16_t)__HAL_TIM_GET_COUNTER(&htim4);
+  95              		.loc 1 27 5 is_stmt 1 view .LVU12
+  96              		.loc 1 27 30 is_stmt 0 view .LVU13
+  97 000a 214B     		ldr	r3, .L9+4
+  98 000c 1B68     		ldr	r3, [r3]
+  99 000e 5C6A     		ldr	r4, [r3, #36]
+ 100              		.loc 1 27 13 view .LVU14
+ 101 0010 24B2     		sxth	r4, r4
+ 102              	.LVL3:
+  28:Core/Src/encoder.c ****     __HAL_TIM_SET_COUNTER(&htim3, 0);
+ 103              		.loc 1 28 5 is_stmt 1 view .LVU15
+ 104 0012 0022     		movs	r2, #0
+ 105 0014 4A62     		str	r2, [r1, #36]
+  29:Core/Src/encoder.c ****     __HAL_TIM_SET_COUNTER(&htim4, 0);
+ 106              		.loc 1 29 5 view .LVU16
+ 107 0016 5A62     		str	r2, [r3, #36]
+  30:Core/Src/encoder.c **** 
+  31:Core/Src/encoder.c ****     // 根据当前行驶方向计算有符号增量
+  32:Core/Src/encoder.c ****     int16_t avg = (left + right) / 2;
+ 108              		.loc 1 32 5 view .LVU17
+ 109              		.loc 1 32 25 is_stmt 0 view .LVU18
+ 110 0018 2819     		adds	r0, r5, r4
+ 111              		.loc 1 32 34 view .LVU19
+ 112 001a 00EBD070 		add	r0, r0, r0, lsr #31
+ 113              		.loc 1 32 13 view .LVU20
+ 114 001e 40F34F00 		sbfx	r0, r0, #1, #16
+ 115              	.LVL4:
+  33:Core/Src/encoder.c ****     extern uint8_t g_car_dir;  // 0:前进,1:后退
+ 116              		.loc 1 33 5 is_stmt 1 view .LVU21
+  34:Core/Src/encoder.c ****     if(g_car_dir == 0)
+ 117              		.loc 1 34 5 view .LVU22
+ 118              		.loc 1 34 18 is_stmt 0 view .LVU23
+ 119 0022 1C4B     		ldr	r3, .L9+8
+ 120 0024 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 121              		.loc 1 34 7 view .LVU24
+ 122 0026 23BB     		cbnz	r3, .L6
+  35:Core/Src/encoder.c ****         g_encoder_distance += (int32_t)(avg * MM_PER_PULSE);
+ 123              		.loc 1 35 9 is_stmt 1 view .LVU25
+ 124              		.loc 1 35 45 is_stmt 0 view .LVU26
+ 125 0028 FFF7FEFF 		bl	__aeabi_i2f
+ 126              	.LVL5:
+ 127              		.loc 1 35 45 view .LVU27
+ 128 002c 1A49     		ldr	r1, .L9+12
+ 129 002e FFF7FEFF 		bl	__aeabi_fmul
+ 130              	.LVL6:
+ 131              		.loc 1 35 31 view .LVU28
+ 132 0032 FFF7FEFF 		bl	__aeabi_f2iz
+ 133              	.LVL7:
+ 134              		.loc 1 35 28 view .LVU29
+ 135 0036 194A     		ldr	r2, .L9+16
+ 136 0038 1368     		ldr	r3, [r2]
+ 137 003a 0344     		add	r3, r3, r0
+ 138 003c 1360     		str	r3, [r2]
+ 139              	.L7:
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s 			page 4
+
+
+  36:Core/Src/encoder.c ****     else
+  37:Core/Src/encoder.c ****         g_encoder_distance -= (int32_t)(avg * MM_PER_PULSE);
+  38:Core/Src/encoder.c **** 
+  39:Core/Src/encoder.c ****     g_abs_distance += (uint32_t)((abs(left) + abs(right)) * MM_PER_PULSE / 2);
+ 140              		.loc 1 39 5 is_stmt 1 view .LVU30
+ 141              		.loc 1 39 35 is_stmt 0 view .LVU31
+ 142 003e 85EAE570 		eor	r0, r5, r5, asr #31
+ 143 0042 A0EBE570 		sub	r0, r0, r5, asr #31
+ 144 0046 80B2     		uxth	r0, r0
+ 145              		.loc 1 39 47 view .LVU32
+ 146 0048 002C     		cmp	r4, #0
+ 147 004a B8BF     		it	lt
+ 148 004c 6442     		rsblt	r4, r4, #0
+ 149              	.LVL8:
+ 150              		.loc 1 39 47 view .LVU33
+ 151 004e A4B2     		uxth	r4, r4
+ 152              		.loc 1 39 59 view .LVU34
+ 153 0050 2044     		add	r0, r0, r4
+ 154 0052 FFF7FEFF 		bl	__aeabi_i2f
+ 155              	.LVL9:
+ 156 0056 1049     		ldr	r1, .L9+12
+ 157 0058 FFF7FEFF 		bl	__aeabi_fmul
+ 158              	.LVL10:
+ 159              		.loc 1 39 74 view .LVU35
+ 160 005c 4FF07C51 		mov	r1, #1056964608
+ 161 0060 FFF7FEFF 		bl	__aeabi_fmul
+ 162              	.LVL11:
+ 163              		.loc 1 39 23 view .LVU36
+ 164 0064 FFF7FEFF 		bl	__aeabi_f2uiz
+ 165              	.LVL12:
+ 166              		.loc 1 39 20 view .LVU37
+ 167 0068 0D4A     		ldr	r2, .L9+20
+ 168 006a 1368     		ldr	r3, [r2]
+ 169 006c 0344     		add	r3, r3, r0
+ 170 006e 1360     		str	r3, [r2]
+  40:Core/Src/encoder.c **** }
+ 171              		.loc 1 40 1 view .LVU38
+ 172 0070 38BD     		pop	{r3, r4, r5, pc}
+ 173              	.LVL13:
+ 174              	.L6:
+  37:Core/Src/encoder.c **** 
+ 175              		.loc 1 37 9 is_stmt 1 view .LVU39
+  37:Core/Src/encoder.c **** 
+ 176              		.loc 1 37 45 is_stmt 0 view .LVU40
+ 177 0072 FFF7FEFF 		bl	__aeabi_i2f
+ 178              	.LVL14:
+  37:Core/Src/encoder.c **** 
+ 179              		.loc 1 37 45 view .LVU41
+ 180 0076 0849     		ldr	r1, .L9+12
+ 181 0078 FFF7FEFF 		bl	__aeabi_fmul
+ 182              	.LVL15:
+  37:Core/Src/encoder.c **** 
+ 183              		.loc 1 37 31 view .LVU42
+ 184 007c FFF7FEFF 		bl	__aeabi_f2iz
+ 185              	.LVL16:
+  37:Core/Src/encoder.c **** 
+ 186              		.loc 1 37 28 view .LVU43
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s 			page 5
+
+
+ 187 0080 064A     		ldr	r2, .L9+16
+ 188 0082 1368     		ldr	r3, [r2]
+ 189 0084 1B1A     		subs	r3, r3, r0
+ 190 0086 1360     		str	r3, [r2]
+ 191 0088 D9E7     		b	.L7
+ 192              	.L10:
+ 193 008a 00BF     		.align	2
+ 194              	.L9:
+ 195 008c 00000000 		.word	htim3
+ 196 0090 00000000 		.word	htim4
+ 197 0094 00000000 		.word	g_car_dir
+ 198 0098 910A063E 		.word	1040583313
+ 199 009c 00000000 		.word	g_encoder_distance
+ 200 00a0 00000000 		.word	g_abs_distance
+ 201              		.cfi_endproc
+ 202              	.LFE66:
+ 204              		.section	.text.Encoder_GetDistance,"ax",%progbits
+ 205              		.align	1
+ 206              		.global	Encoder_GetDistance
+ 207              		.syntax unified
+ 208              		.thumb
+ 209              		.thumb_func
+ 211              	Encoder_GetDistance:
+ 212              	.LFB67:
+  41:Core/Src/encoder.c **** 
+  42:Core/Src/encoder.c **** int32_t Encoder_GetDistance(void) { return g_encoder_distance; }
+ 213              		.loc 1 42 35 is_stmt 1 view -0
+ 214              		.cfi_startproc
+ 215              		@ args = 0, pretend = 0, frame = 0
+ 216              		@ frame_needed = 0, uses_anonymous_args = 0
+ 217              		@ link register save eliminated.
+ 218              		.loc 1 42 37 view .LVU45
+ 219              		.loc 1 42 64 is_stmt 0 view .LVU46
+ 220 0000 014B     		ldr	r3, .L12
+ 221 0002 1868     		ldr	r0, [r3]
+ 222 0004 7047     		bx	lr
+ 223              	.L13:
+ 224 0006 00BF     		.align	2
+ 225              	.L12:
+ 226 0008 00000000 		.word	g_encoder_distance
+ 227              		.cfi_endproc
+ 228              	.LFE67:
+ 230              		.section	.text.Encoder_ResetDistance,"ax",%progbits
+ 231              		.align	1
+ 232              		.global	Encoder_ResetDistance
+ 233              		.syntax unified
+ 234              		.thumb
+ 235              		.thumb_func
+ 237              	Encoder_ResetDistance:
+ 238              	.LFB68:
+  43:Core/Src/encoder.c **** void Encoder_ResetDistance(void) { g_encoder_distance = 0; g_abs_distance = 0; }
+ 239              		.loc 1 43 34 is_stmt 1 view -0
+ 240              		.cfi_startproc
+ 241              		@ args = 0, pretend = 0, frame = 0
+ 242              		@ frame_needed = 0, uses_anonymous_args = 0
+ 243              		@ link register save eliminated.
+ 244              		.loc 1 43 36 view .LVU48
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s 			page 6
+
+
+ 245              		.loc 1 43 55 is_stmt 0 view .LVU49
+ 246 0000 0023     		movs	r3, #0
+ 247 0002 024A     		ldr	r2, .L15
+ 248 0004 1360     		str	r3, [r2]
+ 249              		.loc 1 43 60 is_stmt 1 view .LVU50
+ 250              		.loc 1 43 75 is_stmt 0 view .LVU51
+ 251 0006 024A     		ldr	r2, .L15+4
+ 252 0008 1360     		str	r3, [r2]
+ 253              		.loc 1 43 80 view .LVU52
+ 254 000a 7047     		bx	lr
+ 255              	.L16:
+ 256              		.align	2
+ 257              	.L15:
+ 258 000c 00000000 		.word	g_encoder_distance
+ 259 0010 00000000 		.word	g_abs_distance
+ 260              		.cfi_endproc
+ 261              	.LFE68:
+ 263              		.section	.text.Encoder_GetAbsDistance,"ax",%progbits
+ 264              		.align	1
+ 265              		.global	Encoder_GetAbsDistance
+ 266              		.syntax unified
+ 267              		.thumb
+ 268              		.thumb_func
+ 270              	Encoder_GetAbsDistance:
+ 271              	.LFB69:
+  44:Core/Src/encoder.c **** int32_t Encoder_GetAbsDistance(void) { return g_abs_distance; }...
+ 272              		.loc 1 44 38 is_stmt 1 view -0
+ 273              		.cfi_startproc
+ 274              		@ args = 0, pretend = 0, frame = 0
+ 275              		@ frame_needed = 0, uses_anonymous_args = 0
+ 276              		@ link register save eliminated.
+ 277              		.loc 1 44 40 view .LVU54
+ 278              		.loc 1 44 63 is_stmt 0 view .LVU55
+ 279 0000 014B     		ldr	r3, .L18
+ 280 0002 1868     		ldr	r0, [r3]
+ 281 0004 7047     		bx	lr
+ 282              	.L19:
+ 283 0006 00BF     		.align	2
+ 284              	.L18:
+ 285 0008 00000000 		.word	g_abs_distance
+ 286              		.cfi_endproc
+ 287              	.LFE69:
+ 289              		.section	.bss.g_abs_distance,"aw",%nobits
+ 290              		.align	2
+ 293              	g_abs_distance:
+ 294 0000 00000000 		.space	4
+ 295              		.section	.bss.g_encoder_distance,"aw",%nobits
+ 296              		.align	2
+ 299              	g_encoder_distance:
+ 300 0000 00000000 		.space	4
+ 301              		.text
+ 302              	.Letext0:
+ 303              		.file 2 "C:/arm-gnu-toolchain-15.2.rel1-mingw-w64-x86_64-arm-none-eabi/arm-none-eabi/include/machi
+ 304              		.file 3 "C:/arm-gnu-toolchain-15.2.rel1-mingw-w64-x86_64-arm-none-eabi/arm-none-eabi/include/sys/_
+ 305              		.file 4 "Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xe.h"
+ 306              		.file 5 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_def.h"
+ 307              		.file 6 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_dma.h"
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s 			page 7
+
+
+ 308              		.file 7 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h"
+ARM GAS  C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s 			page 8
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 encoder.c
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s:19     .text.Encoder_Init:00000000 $t
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s:25     .text.Encoder_Init:00000000 Encoder_Init
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s:60     .text.Encoder_Init:00000020 $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s:299    .bss.g_encoder_distance:00000000 g_encoder_distance
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s:293    .bss.g_abs_distance:00000000 g_abs_distance
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s:68     .text.Encoder_Update:00000000 $t
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s:74     .text.Encoder_Update:00000000 Encoder_Update
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s:195    .text.Encoder_Update:0000008c $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s:205    .text.Encoder_GetDistance:00000000 $t
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s:211    .text.Encoder_GetDistance:00000000 Encoder_GetDistance
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s:226    .text.Encoder_GetDistance:00000008 $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s:231    .text.Encoder_ResetDistance:00000000 $t
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s:237    .text.Encoder_ResetDistance:00000000 Encoder_ResetDistance
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s:258    .text.Encoder_ResetDistance:0000000c $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s:264    .text.Encoder_GetAbsDistance:00000000 $t
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s:270    .text.Encoder_GetAbsDistance:00000000 Encoder_GetAbsDistance
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s:285    .text.Encoder_GetAbsDistance:00000008 $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s:290    .bss.g_abs_distance:00000000 $d
+C:\Users\XUCHEN~1\AppData\Local\Temp\ccbqlUla.s:296    .bss.g_encoder_distance:00000000 $d
+
+UNDEFINED SYMBOLS
+HAL_TIM_Encoder_Start
+htim3
+htim4
+__aeabi_i2f
+__aeabi_fmul
+__aeabi_f2iz
+__aeabi_f2uiz
+g_car_dir

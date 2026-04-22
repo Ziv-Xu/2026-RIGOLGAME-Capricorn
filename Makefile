@@ -38,7 +38,21 @@ BUILD_DIR = build
 C_SOURCES =  \
 Core/Src/main.c \
 Core/Src/stm32f1xx_it.c \
+Core/Src/oled.c \
 Core/Src/stm32f1xx_hal_msp.c \
+Core/Src/gpio.c \
+Core/Src/i2c.c \
+Core/Src/tim.c \
+Core/Src/usart.c \
+Core/Src/button.c \
+Core/Src/track.c \
+Core/Src/vision.c \
+Core/Src/motor.c \
+Core/Src/encoder.c \
+Core/Src/arm.c \
+Core/Src/system_stm32f1xx.c \
+Core/Src/sysmem.c \
+Core/Src/syscalls.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_gpio_ex.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_i2c.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.c \
@@ -53,14 +67,7 @@ Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_flash_ex.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_exti.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim_ex.c \
-Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_uart.c \
-Core/Src/system_stm32f1xx.c \
-Core/Src/sysmem.c \
-Core/Src/syscalls.c \
-Core/Src/gpio.c \
-Core/Src/i2c.c \
-Core/Src/tim.c \
-Core/Src/usart.c
+Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_uart.c 
 
 # ASM sources
 ASM_SOURCES =  \
