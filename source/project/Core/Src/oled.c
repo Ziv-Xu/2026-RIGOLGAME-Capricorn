@@ -1,5 +1,6 @@
 #include "oled.h"
 #include "i2c.h"
+#include <stdio.h>
 
 // µ◊≤„–¥√¸¡Ó/–¥ ˝æ›
 static void OLED_Write_Cmd(uint8_t cmd)
@@ -180,4 +181,29 @@ void OLED_ShowNum(uint8_t x, uint8_t y, int32_t num, uint8_t len)
   char str[16] = {0};
   sprintf(str, "%ld", num);
   OLED_ShowString(x, y, str);
+}
+
+//∞¥º¸…Ë÷√À≥–Úœ‘ æ
+void OLED_Show_Order_Setting(char *order_str, uint8_t index)
+{
+    char buf[16];
+    sprintf(buf, "Order: %s", order_str);
+    OLED_ShowString(0, 0, buf);
+    sprintf(buf, "Setting %d/3", index+1);
+    OLED_ShowString(0, 1, buf);
+}
+
+void OLED_Show_State(const char *state)
+{
+    OLED_ShowString(0, 0, (char*)state);
+}
+
+void OLED_Show_AlignResult(uint8_t success)
+{
+    OLED_ShowString(0, 1, success ? "Align OK" : "Align Fail");
+}
+
+void OLED_Clear_Line(uint8_t line)
+{
+    OLED_ShowString(0, line, "                ");
 }

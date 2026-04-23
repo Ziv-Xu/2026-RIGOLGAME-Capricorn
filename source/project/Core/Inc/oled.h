@@ -3,7 +3,7 @@
 
 #include "stm32f1xx_hal.h"
 #define OLED_I2C_HANDLE &hi2c1
-#define OLED_I2C_ADDR 0x78  // 0.96´çI2C OLEDÄ¬ÈÏµØÖ·
+#define OLED_I2C_ADDR 0x78  // 0.96��I2C OLEDĬ�ϵ�ַ
 
 
 void OLED_Init(void);
