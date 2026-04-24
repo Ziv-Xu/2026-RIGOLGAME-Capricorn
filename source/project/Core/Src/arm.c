@@ -1,14 +1,14 @@
 #include "arm.h"
 #include "i2c.h"
 
-// 预设角度数组 {J0, J1, J2}
+
 static const float arm_points[][3] = {
     {  0, 45, -80},   // RESET
     { 90,  0, -80},   // ALIGN
     { 90, 30, -30},   // PICK_A
-    { 90, 30, -30},   // PICK_B (可微调)
-    { 90, 30, -30},   // PICK_C (可微调)
-    { 90, 30, -30},   // STORE (移动位)
+    { 90, 30, -30},   // PICK_B (锟斤拷微锟斤拷)
+    { 90, 30, -30},   // PICK_C (锟斤拷微锟斤拷)
+    { 90, 30, -30},   // STORE (锟狡讹拷位)
     { 90, 80, -30}    // DROP
 };
 
@@ -64,15 +64,15 @@ void Arm_MoveToPoint(ArmPoint point)
 void Arm_PickSequence(uint8_t goods_index)
 {
     ArmPoint pick_point = ARM_POINT_PICK_A + goods_index;
-    // 1. 移动到抓取位
+
     Arm_MoveToPoint(pick_point);
     HAL_Delay(200);
-    // 2. 视觉发送对准完成信号，此处简化，直接吸
+
     Magnet_On();
     HAL_Delay(200);
-    // 3. 回到存储位
+ 
     Arm_MoveToPoint(ARM_POINT_STORE);
-    Magnet_Off();   // 放在暂存区
+    Magnet_Off();   // 锟斤拷锟斤拷锟捷达拷锟斤拷
     HAL_Delay(200);
     arm_done = 1;
     if(done_callback) done_callback();
@@ -80,16 +80,16 @@ void Arm_PickSequence(uint8_t goods_index)
 
 void Arm_DropSequence(void)
 {
-    // 从存储位吸起货物
+
     Arm_MoveToPoint(ARM_POINT_STORE);
     Magnet_On();
     HAL_Delay(300);
-    // 移动到卸货位
+  
     Arm_MoveToPoint(ARM_POINT_DROP);
     HAL_Delay(200);
     Magnet_Off();
     HAL_Delay(150);
-    // 抖一抖
+
     for(int k=0;k<2;k++){
         Magnet_On(); HAL_Delay(10);
         Magnet_Off(); HAL_Delay(30);

@@ -44,17 +44,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-// 编码器目标位置宏定义（单位：mm），请根据实际场地调整
-#define ENC_POS_WAREHOUSE   1200    // HOME -> 仓库区
-#define ENC_POS_A           2500    // HOME -> A区（累计）
-#define ENC_POS_B           3800    // HOME -> B区
-#define ENC_POS_C           5100    // HOME -> C区
 
-#define PWM_BASE     400
-#define PWM_BACK     350
-#define TRACK_KP     1.2
-#define TRACK_KI     0.01
-#define TRACK_KD     0.3
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -64,35 +54,22 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-// ==================== 状态机 ====================
-typedef enum {
-    STATE_IDLE,
-    STATE_ORDER_SETTING,
-    STATE_READY,
-    STATE_GO_WAREHOUSE,
-    STATE_ALIGN_WAREHOUSE,
-    STATE_PICK_GOODS,
-    STATE_GO_UNLOAD,
-    STATE_ALIGN_UNLOAD,
-    STATE_DROP_GOODS,
-    STATE_RETURN_HOME,
-    STATE_FINISH
-} SystemState;
+// ====================  ====================
 
-//小车相关
-SystemState g_state = STATE_IDLE;   // 初始小车状态变量
-uint8_t g_car_dir = 0;              // 小车行进状态：0:前进，1:后退
-int32_t g_target_enc = 0;           // 当前目标编码器距离
+//
+SystemState g_state = STATE_IDLE;   // 
+uint8_t g_car_dir = 0;              // 
+int32_t g_target_enc = 0;           // 
 
-//机械臂相关
-uint8_t g_arm_done_event = 0;       // 机械臂动作完成事件
-uint8_t g_vision_done_event = 0;    // 视觉对准完成事件
+//
+uint8_t g_arm_done_event = 0;       // 
+uint8_t g_vision_done_event = 0;    // 
 
-//物块相关
-char g_unload_order[4] = "ABC";     // 默认顺序
-uint8_t g_pick_index = 0;           // 抓取索引 0:A,1:B,2:C
-uint8_t g_order_index = 0;          // 当前卸货索引序号
-uint8_t g_unload_count = 0;         // 已卸货物计数
+//
+char g_unload_order[4] = "ABC";     // 
+uint8_t g_pick_index = 0;           // 
+uint8_t g_order_index = 0;          // 
+uint8_t g_unload_count = 0;         // 
 
 
 
@@ -143,14 +120,13 @@ int main(void)
   MX_USART3_UART_Init();
 
   /* USER CODE BEGIN 2 */
-  HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
+  Motor_Init();
   Encoder_Init();
   OLED_Init();
   OLED_Clear();
   Arm_Init();
   Arm_SetDoneCallback(Arm_Done_Callback);
-  UART_Init();            // 开启串口接收中断
+  UART_Init();
 
   OLED_ShowString(0, 0, "System Ready!");
   /* USER CODE END 2 */
@@ -159,7 +135,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    State_Machine();       // 依然由状态机控制
+    State_Machine();
     HAL_Delay(10);
     /* USER CODE END WHILE */
 
@@ -204,284 +180,7 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-// ====================== 状态机实现 ======================
-void State_Machine(void)
-{
-    uint8_t key;
-    int32_t cur_dist;
 
-    switch(g_state)
-    {
-        case STATE_IDLE:
-            OLED_Show_State("Press KEY1 start");
-            key = Key_Scan();
-            if(key == 1)
-            {
-                Start_Order_Setting();
-            }
-            break;
-
-        case STATE_ORDER_SETTING:
-            // 此状态在Start_Order_Setting中处理，处理完直接自动跳转
-            break;
-
-        case STATE_READY:
-            OLED_Show_State("Ready! Press KEY1");
-            key = Key_Scan();
-            if(key == 1)
-            {
-                g_pick_index = 0;
-                g_unload_count = 0;
-                g_order_index = 0;
-                Encoder_ResetDistance();
-                g_target_enc = ENC_POS_WAREHOUSE;
-                g_state = STATE_GO_WAREHOUSE;
-                OLED_Clear();
-            }
-            break;
-
-        case STATE_GO_WAREHOUSE:
-            Execute_LineTracking(g_target_enc, 0);  // 前进
-            if(Encoder_GetDistance() >= g_target_enc)
-            {
-                Motor_Stop();
-                g_state = STATE_ALIGN_WAREHOUSE;
-                OLED_Clear();
-            }
-            break;
-
-        case STATE_ALIGN_WAREHOUSE:
-            OLED_Show_State("Aligning...");
-            OpenMV_SetMode(3);
-            Arm_MoveToPoint(ARM_POINT_ALIGN);
-            if(Wait_AlignComplete(5000))
-            {
-                OLED_Show_AlignResult(1);
-                Arm_MoveToPoint(ARM_POINT_RESET);
-                g_state = STATE_PICK_GOODS;
-                g_arm_done_event = 0;
-                Arm_ClearDoneFlag();
-            }
-            else
-            {
-                OLED_Show_AlignResult(0);
-                // 超时也继续，可加声光报警
-                g_state = STATE_PICK_GOODS;
-            }
-            break;
-
-        case STATE_PICK_GOODS:
-            if(g_pick_index < 3)
-            {
-                char buf[16];
-                sprintf(buf, "Pick %c", 'A' + g_pick_index);
-                OLED_Show_State(buf);
-                if(!Arm_IsDone())
-                {
-                    Arm_PickSequence(g_pick_index);
-                }
-                if(g_arm_done_event)
-                {
-                    g_arm_done_event = 0;
-                    Arm_ClearDoneFlag();
-                    g_pick_index++;
-                    Beep(100);
-                    LED_Blink(1);
-                }
-            }
-            else
-            {
-                // 抓取完毕，准备前往第一个卸货区
-                g_unload_count = 0;
-                g_order_index = 0;
-                char target_char = g_unload_order[g_order_index];
-                if(target_char == 'A')      g_target_enc = ENC_POS_A;
-                else if(target_char == 'B') g_target_enc = ENC_POS_B;
-                else                        g_target_enc = ENC_POS_C;
-                g_state = STATE_GO_UNLOAD;
-                OLED_Clear();
-            }
-            break;
-
-        case STATE_GO_UNLOAD:
-            cur_dist = Encoder_GetDistance();
-            uint8_t dir = (g_target_enc > cur_dist) ? 0 : 1;
-            Execute_LineTracking(g_target_enc, dir);
-            if((dir == 0 && cur_dist >= g_target_enc) || (dir == 1 && cur_dist <= g_target_enc))
-            {
-                Motor_Stop();
-                g_state = STATE_ALIGN_UNLOAD;
-                OLED_Clear();
-            }
-            break;
-
-        case STATE_ALIGN_UNLOAD:
-            OLED_Show_State("Align Unload");
-            OpenMV_SetMode(3);
-            Arm_MoveToPoint(ARM_POINT_ALIGN);
-            if(Wait_AlignComplete(5000))
-            {
-                OLED_Show_AlignResult(1);
-                Arm_MoveToPoint(ARM_POINT_RESET);
-                g_state = STATE_DROP_GOODS;
-                g_arm_done_event = 0;
-                Arm_ClearDoneFlag();
-            }
-            else
-            {
-                g_state = STATE_DROP_GOODS;
-            }
-            break;
-
-        case STATE_DROP_GOODS:
-            {
-                char buf[16];
-                sprintf(buf, "Drop %c", g_unload_order[g_order_index]);
-                OLED_Show_State(buf);
-                if(!Arm_IsDone())
-                {
-                    Arm_DropSequence();
-                }
-                if(g_arm_done_event)
-                {
-                    g_arm_done_event = 0;
-                    Arm_ClearDoneFlag();
-                    Beep(200);
-                    LED_Blink(2);
-                    g_order_index++;
-                    g_unload_count++;
-                    if(g_unload_count < 3)
-                    {
-                        char next = g_unload_order[g_order_index];
-                        if(next == 'A')      g_target_enc = ENC_POS_A;
-                        else if(next == 'B') g_target_enc = ENC_POS_B;
-                        else                 g_target_enc = ENC_POS_C;
-                        g_state = STATE_GO_UNLOAD;
-                    }
-                    else
-                    {
-                        g_target_enc = 0;   // 返回HOME
-                        g_state = STATE_RETURN_HOME;
-                    }
-                    OLED_Clear();
-                }
-            }
-            break;
-
-        case STATE_RETURN_HOME:
-            cur_dist = Encoder_GetDistance();
-            dir = (0 > cur_dist) ? 0 : 1;
-            Execute_LineTracking(0, dir);
-            if((dir == 0 && cur_dist >= 0) || (dir == 1 && cur_dist <= 0))
-            {
-                Motor_Stop();
-                g_state = STATE_FINISH;
-            }
-            break;
-
-        case STATE_FINISH:
-            OLED_Show_State("Task Finish!");
-            Beep(500);
-            HAL_Delay(2000);
-            g_state = STATE_IDLE;
-            OLED_Clear();
-            break;
-    }
-}
-
-/* 顺序设置函数（阻塞式，但仅在设置时运行，因此不影响任务执行） */
-void Start_Order_Setting(void)
-{
-    char order[4] = "   ";
-    uint8_t idx = 0;
-    uint8_t key;
-    OLED_Clear();
-    OLED_Show_Order_Setting(order, idx);
-    while(idx < 3)
-    {
-        key = Key_Scan();
-        if(key)
-        {
-            order[idx] = (key == 1) ? 'A' : (key == 2) ? 'B' : 'C';
-            OLED_Show_Order_Setting(order, idx);
-            idx++;
-            HAL_Delay(300);
-        }
-        HAL_Delay(10);
-    }
-    order[3] = '\0';
-    strcpy(g_unload_order, order);
-    OLED_Clear();
-    OLED_ShowString(0, 0, "Order Saved:");
-    OLED_ShowString(0, 1, order);
-    HAL_Delay(1500);
-    g_state = STATE_READY;
-}
-
-/* 巡线执行函数（非阻塞，每次调用只执行一次PID计算与电机输出） */
-void Execute_LineTracking(int32_t target_enc, uint8_t direction)
-{
-    Track_Sensor_Read();
-    Track_PID_Calc(TRACK_KP, TRACK_KI, TRACK_KD);
-    Encoder_Update();
-    float pid_out = Get_Track_PID_Out();
-    uint16_t base_pwm = (direction == 0) ? PWM_BASE : PWM_BACK;
-    int16_t l = base_pwm - pid_out;
-    int16_t r = base_pwm + pid_out;
-    if(l < 0) l = 0; 
-    if(l > 999) l = 999;   //加个限幅
-    if(r < 0) r = 0; 
-    if(r > 999) r = 999;
-
-    if(direction == 0)
-        Motor_Forward(l, r);
-    else
-        Motor_Backward(l, r);
-    g_car_dir = direction;
-}
-
-/* 等待视觉对准完成（带超时，内部使用HAL_Delay，不中断其他中断） */
-uint8_t Wait_AlignComplete(uint32_t timeout_ms)
-{
-    uint32_t tick = 0;
-    uint8_t flag;
-    while(tick < timeout_ms)
-    {
-        flag = Vision_GetAlignFlag();
-        if(flag == 1)   // 收到偏移数据
-        {
-            Vision_ClearAlignFlag();
-            float offset = Vision_GetOffset();
-            if(fabsf(offset) < 0.5f)
-                return 1;
-            // 这里可加入微调代码，省略
-        }
-        else if(flag == 2)  // 收到OK信号
-        {
-            Vision_ClearAlignFlag();
-            return 1;
-        }
-        HAL_Delay(10);
-        tick += 10;
-    }
-    return 0;
-}
-
-void Beep(uint16_t ms)
-{
-    // 实际蜂鸣器代码，按需实现
-    // HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_SET);
-    // HAL_Delay(ms);
-    // HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
-}
-
-void LED_Blink(uint8_t times)
-{
-    for(uint8_t i=0; i<times; i++)
-    {
-        // LED_ON(); HAL_Delay(100); LED_OFF(); HAL_Delay(100);
-    }
-}
 /* USER CODE END 4 */
 
 /**

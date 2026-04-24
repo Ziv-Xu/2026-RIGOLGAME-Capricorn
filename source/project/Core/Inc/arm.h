@@ -3,15 +3,15 @@
 
 #include "main.h"
 
-// 机械臂点位枚举
+
 typedef enum {
     ARM_POINT_RESET = 0,
-    ARM_POINT_ALIGN,        // 对准位（底座右转90°）
+    ARM_POINT_ALIGN,
     ARM_POINT_PICK_A,
     ARM_POINT_PICK_B,
     ARM_POINT_PICK_C,
-    ARM_POINT_STORE,        // 车上暂存区
-    ARM_POINT_DROP          // 统一卸货位（底座右转90°）
+    ARM_POINT_STORE,
+    ARM_POINT_DROP
 } ArmPoint;
 
 void Arm_Init(void);
@@ -22,7 +22,7 @@ void Arm_SetDoneCallback(void (*cb)(void));
 uint8_t Arm_IsDone(void);
 void Arm_ClearDoneFlag(void);
 
-// 电磁铁控制
+
 void Magnet_On(void);
 void Magnet_Off(void);
 
