@@ -50,8 +50,8 @@
 #define ENC_POS_B           3800    // HOME -> B区
 #define ENC_POS_C           5100    // HOME -> C区
 
-#define PWM_BASE     400
-#define PWM_BACK     350
+// #define PWM_BASE     400
+// #define PWM_BACK     350
 #define TRACK_KP     1.2
 #define TRACK_KI     0.01
 #define TRACK_KD     0.3
@@ -143,16 +143,19 @@ int main(void)
   MX_USART3_UART_Init();
 
   /* USER CODE BEGIN 2 */
-  HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
-  Encoder_Init();
-  OLED_Init();
-  OLED_Clear();
-  Arm_Init();
-  Arm_SetDoneCallback(Arm_Done_Callback);
-  UART_Init();            // 开启串口接收中断
+    HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
+    Motor_Init();
+    Track_Init();
+    Track_PID_Init(12.0, 0.0, 6.0, 150.0);  // 输出限幅 ±150 mm/s
+    Encoder_Init();
+    OLED_Init();
+    OLED_Clear();
+    Arm_Init();
+    Arm_SetDoneCallback(Arm_Done_Callback);
+    UART_Init();            // 开启串口接收中断
 
-  OLED_ShowString(0, 0, "System Ready!");
+    OLED_ShowString(0, 0, "System Ready!");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -160,7 +163,14 @@ int main(void)
   while (1)
   {
     State_Machine();       // 依然由状态机控制
-    HAL_Delay(10);
+
+     if (g_motor_control_flag) {
+        g_motor_control_flag = 0;
+        Motor_Control_Loop();   // 10ms 执行一次，更新速度和距离
+    }
+
+
+    HAL_Delay(50);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -421,24 +431,23 @@ void Start_Order_Setting(void)
 /* 巡线执行函数（非阻塞，每次调用只执行一次PID计算与电机输出） */
 void Execute_LineTracking(int32_t target_enc, uint8_t direction)
 {
+    // 1. 读取传感器
     Track_Sensor_Read();
-    Track_PID_Calc(TRACK_KP, TRACK_KI, TRACK_KD);
-    Encoder_Update();
-    float pid_out = Get_Track_PID_Out();
-    uint16_t base_pwm = (direction == 0) ? PWM_BASE : PWM_BACK;
-    int16_t l = base_pwm - pid_out;
-    int16_t r = base_pwm + pid_out;
-    if(l < 0) l = 0; 
-    if(l > 999) l = 999;   //加个限幅
-    if(r < 0) r = 0; 
-    if(r > 999) r = 999;
-
-    if(direction == 0)
-        Motor_Forward(l, r);
-    else
-        Motor_Backward(l, r);
+    // 2. 循迹 PID 输出速度修正量（mm/s）
+    int error = Get_Track_Error();
+    float turn_comp = Track_PID_Calc(error);
+    // 3. 基础线速度（mm/s）
+    float base_speed = (direction == 0) ? 200.0f : -200.0f;
+    // 4. 左右目标速度
+    float left_target  = base_speed - turn_comp;
+    float right_target = base_speed + turn_comp;
+    // 5. 设置到电机控制模块
+    Motor_SetSpeed(left_target, right_target);
+    
+    // 方向记录（用于距离显示等，可选）
     g_car_dir = direction;
 }
+
 
 /* 等待视觉对准完成（带超时，内部使用HAL_Delay，不中断其他中断） */
 uint8_t Wait_AlignComplete(uint32_t timeout_ms)

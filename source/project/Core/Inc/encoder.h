@@ -4,9 +4,7 @@
 #include "main.h"
 
 void Encoder_Init(void);
-void Encoder_Update(void);
-int32_t Encoder_GetDistance(void);
-void Encoder_ResetDistance(void);
-int32_t Encoder_GetAbsDistance(void); // 总行驶距离（正向累加）
+int32_t Encoder_GetAbsDistance(void);
+void Encoder_ResetDistance(void);  // 会清零 motor 中的距离变量
 
 #endif

@@ -1,53 +1,70 @@
 #include "track.h"
+#include "soft_i2c_track.h"
 
-static uint8_t g_track_raw = 0;
-static int8_t  g_track_error = 0;
-static float   g_track_pid_out = 0;
-static int8_t  g_track_error_last = 0;
-static float   g_track_integral = 0;
+/*==================== 权重配置 ====================*/
+static const int IR_Weight[8] = {-4, -3, -2, -1, 1, 2, 3, 4};
 
-#define TRACK_READ()  (\
-  (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_15) << 0) |\
-  (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14) << 1) |\
-  (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_13) << 2) |\
-  (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12) << 3) |\
-  (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_4)  << 4) |\
-  (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5)  << 5) |\
-  (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_6)  << 6) |\
-  (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_7)  << 7) )
+/*==================== 浮点 PID 结构 ====================*/
+static struct {
+    float Kp, Ki, Kd;
+    float integral;
+    float prev_error;
+    float out_max, out_min;
+} track_pid;
 
-void Track_Sensor_Read(void)
+void Track_Init(void)
 {
-  g_track_raw = TRACK_READ();
-  switch(g_track_raw)
-  {
-        case 0x01: g_track_error = -7; break;
-        case 0x02: g_track_error = -5; break;
-        case 0x04: g_track_error = -3; break;
-        case 0x08: g_track_error = -1; break;
-        case 0x10: g_track_error = 1;  break;
-        case 0x20: g_track_error = 3;  break;
-        case 0x40: g_track_error = 5;  break;
-        case 0x80: g_track_error = 7;  break;
-        default:
-            g_track_error = (g_track_error < 0) ? -2 : 2;
-            break;
-  }
+    HAL_Delay(10);
 }
 
-void Track_PID_Calc(float kp, float ki, float kd)
+uint8_t Track_Read_All(void)
 {
-    int e = g_track_error;
-    float p = kp * e;
-    g_track_integral += e;
-    if(g_track_integral > 1000)  g_track_integral = 1000;
-    if(g_track_integral < -1000) g_track_integral = -1000;
-    float i = ki * g_track_integral;
-    float d = kd * (e - g_track_error_last);
-    g_track_pid_out = p + i + d;
-    g_track_error_last = e;
+    return TRACK_I2C_Read_One_Byte(TRACK_I2C_ADDR, TRACK_REG_DATA);
 }
 
-int8_t Get_Track_Error(void) { return g_track_error; }
-float Get_Track_PID_Out(void) { return g_track_pid_out; }
-void Track_Reset_PID(void) { g_track_integral = 0; g_track_error_last = 0; }
+int Get_Track_Error(void)
+{
+    uint8_t status = Track_Read_All();
+    int sum = 0, count = 0;
+    for (int i = 0; i < 8; i++) {
+        if (status & (1 << i)) {
+            sum += IR_Weight[i];
+            count++;
+        }
+    }
+    return (count == 0) ? 0 : sum / count;
+}
+
+void Track_PID_Init(float kp, float ki, float kd, float out_max)
+{
+    track_pid.Kp = kp;
+    track_pid.Ki = ki;
+    track_pid.Kd = kd;
+    track_pid.integral = 0;
+    track_pid.prev_error = 0;
+    track_pid.out_max = out_max;
+    track_pid.out_min = -out_max;
+}
+
+float Track_PID_Calc(int error)
+{
+    float p_out = track_pid.Kp * error;
+    track_pid.integral += error * 0.01f;  // 假设调用周期 10ms，与主循环一致
+    if (track_pid.integral > track_pid.out_max / track_pid.Ki) 
+        track_pid.integral = track_pid.out_max / track_pid.Ki;
+    if (track_pid.integral < track_pid.out_min / track_pid.Ki) 
+        track_pid.integral = track_pid.out_min / track_pid.Ki;
+    float i_out = track_pid.Ki * track_pid.integral;
+    float d_out = track_pid.Kd * (error - track_pid.prev_error) / 0.01f;
+    float output = p_out + i_out + d_out;
+    if (output > track_pid.out_max) output = track_pid.out_max;
+    if (output < track_pid.out_min) output = track_pid.out_min;
+    track_pid.prev_error = error;
+    return output;
+}
+
+void Track_PID_Reset(void)
+{
+    track_pid.integral = 0;
+    track_pid.prev_error = 0;
+}

@@ -3,10 +3,12 @@
 
 #include "main.h"
 
-void Track_Sensor_Read(void);
-void Track_PID_Calc(float kp, float ki, float kd);
-int8_t Get_Track_Error(void);
-float Get_Track_PID_Out(void);
-void Track_Reset_PID(void);
+void Track_Init(void);
+uint8_t Track_Read_All(void);
+int Get_Track_Error(void);          // 返回加权偏差（整数）
+
+void Track_PID_Init(float kp, float ki, float kd, float out_max);
+float Track_PID_Calc(int error);    // 返回 PID 输出（浮点）
+void Track_PID_Reset(void);
 
 #endif
