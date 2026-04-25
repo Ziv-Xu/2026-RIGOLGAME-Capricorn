@@ -1,8 +1,16 @@
 #include "motor.h"
 
-/* ---------- 硬件宏定义（同前） ---------- */
+/* ========== 硬件 Abstraction ========== */
 #define PWM_MAX 999
-// ... AIN1_H 等定义
+#define AIN1_H()  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET)
+#define AIN1_L()  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET)
+#define AIN2_H()  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET)
+#define AIN2_L()  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET)
+#define BIN1_H()  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET)
+#define BIN1_L()  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET)
+#define BIN2_H()  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET)
+#define BIN2_L()  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET)
+
 
 extern TIM_HandleTypeDef htim2;   // PWM 定时器
 #define PWM_L_SET(d)  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, d)
