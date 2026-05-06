@@ -17,7 +17,7 @@ typedef struct {
     uint8_t frame_complete; // 一帧接收完成标志（由中断置1，用户读取后清零）
 } ColorFrame_t;
 
-extern ColorFrame_t g_color_frame;
+
 
 void Color_UART_Init(void);
 void Color_ClearFrame(void);                     // 清除所有检测标志及帧完成标志

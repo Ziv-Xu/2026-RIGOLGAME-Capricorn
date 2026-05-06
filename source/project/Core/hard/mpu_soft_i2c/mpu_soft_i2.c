@@ -3,7 +3,7 @@
 // 简单延时（根据主频调整，保证I2C速度<400KHz）
 static void I2C_Delay(void)
 {
-//    uint8_t i = 10;
+//    uint16_t i = 80;
 //    while(i--);
 }
 

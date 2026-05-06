@@ -20,6 +20,7 @@ static float gyro_pitch = 0.0f, gyro_roll = 0.0f, gyro_yaw = 0.0f;
 static uint32_t last_update_time = 0;
 static bool is_calibrated = false;
 
+
 // 内部函数：读取原始数据（不减去零偏）
 static void MPU6050_ReadRawData(int16_t *ax, int16_t *ay, int16_t *az,
                                 int16_t *gx, int16_t *gy, int16_t *gz)
@@ -86,7 +87,7 @@ void MPU6050_ReadRegs(uint8_t RegAddress, uint8_t *DataArray, uint8_t Count)
 // 初始化MPU6050
 void MPU6050_Init(void)
 {
-    mpu_I2C_Init();
+    //mpu_I2C_Init();
     MPU6050_WriteReg(MPU6050_PWR_MGMT_1, 0x01);   // 时钟源选择X轴陀螺仪PLL
     MPU6050_WriteReg(MPU6050_PWR_MGMT_2, 0x00);   // 所有轴使能
     MPU6050_WriteReg(MPU6050_SMPLRT_DIV, MPU6050_SMPLRT_DIV_VAL);

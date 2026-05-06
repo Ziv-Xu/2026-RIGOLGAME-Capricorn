@@ -5,9 +5,9 @@
 
 /*======================== 引脚配置 ========================*/
 /* 用户可根据实际硬件连接修改以下宏定义                     */
-#define TRACK_I2C_SCL_PIN       GPIO_PIN_4
+#define TRACK_I2C_SCL_PIN       GPIO_PIN_5
 #define TRACK_I2C_SCL_GPIO_PORT GPIOC
-#define TRACK_I2C_SDA_PIN       GPIO_PIN_5
+#define TRACK_I2C_SDA_PIN       GPIO_PIN_4
 #define TRACK_I2C_SDA_GPIO_PORT GPIOC
 /*==========================================================*/
 

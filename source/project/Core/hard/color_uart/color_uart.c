@@ -2,10 +2,11 @@
 #include "string.h"
 #include "stdio.h"
 #include "stm32f1xx_hal.h"
+#include "extern.h"
 
 extern UART_HandleTypeDef huart4;
 
-ColorFrame_t g_color_frame = {0};
+
 
 #define RX_BUF_SIZE  64
 static char rx_buf[RX_BUF_SIZE];
@@ -61,38 +62,38 @@ uint8_t Color_GetCoordinates(uint8_t id, int16_t *x, int16_t *y)
     return 1;
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-    if (huart->Instance == UART4)
-    {
-        if (rx_byte == '\n')
-        {
-            rx_buf[rx_index] = '\0';
-            if (rx_index > 0)
-            {
-                // 判断是否为帧结束标记 "E"
-                if (rx_buf[0] == 'E' && rx_index == 1)
-                {
-                    g_color_frame.frame_complete = 1;
-                }
-                else
-                {
-                    Parse_Color_String(rx_buf);
-                }
-            }
-            rx_index = 0;
-        }
-        else
-        {
-            if (rx_index < RX_BUF_SIZE - 1)
-            {
-                rx_buf[rx_index++] = rx_byte;
-            }
-            else
-            {
-                rx_index = 0;   // 溢出重置
-            }
-        }
-        HAL_UART_Receive_IT(&huart4, &rx_byte, 1);
-    }
-}
+//void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+//{
+//    if (huart->Instance == UART4)
+//    {
+//        if (rx_byte == '\n')
+//        {
+//            rx_buf[rx_index] = '\0';
+//            if (rx_index > 0)
+//            {
+//                // 判断是否为帧结束标记 "E"
+//                if (rx_buf[0] == 'E' && rx_index == 1)
+//                {
+//                    g_color_frame.frame_complete = 1;
+//                }
+//                else
+//                {
+//                    Parse_Color_String(rx_buf);
+//                }
+//            }
+//            rx_index = 0;
+//        }
+//        else
+//        {
+//            if (rx_index < RX_BUF_SIZE - 1)
+//            {
+//                rx_buf[rx_index++] = rx_byte;
+//            }
+//            else
+//            {
+//                rx_index = 0;   // 溢出重置
+//            }
+//        }
+//        HAL_UART_Receive_IT(&huart4, &rx_byte, 1);
+//    }
+//}

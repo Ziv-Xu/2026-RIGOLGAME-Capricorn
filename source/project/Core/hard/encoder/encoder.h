@@ -2,11 +2,23 @@
 #define __ENCODER_H
 
 #include "main.h"
+#include "encoder.h"
+
+#define WHEEL_DIAMETER  65.0f
+#define ENCODER_LINES   13
+#define GEAR_RATIO      30
+#define PULSE_PER_ROUND (ENCODER_LINES * GEAR_RATIO * 4)
+#define MM_PER_PULSE    (3.1415926f * WHEEL_DIAMETER / PULSE_PER_ROUND)
+
+
+
+
+
 
 void Encoder_Init(void);
 void Encoder_Update(void);
-int32_t Encoder_GetDistance(void);
+int16_t Encoder_GetDistance(void);
 void Encoder_ResetDistance(void);
-int32_t Encoder_GetAbsDistance(void); // 总行驶距离（正向累加）
+
 
 #endif

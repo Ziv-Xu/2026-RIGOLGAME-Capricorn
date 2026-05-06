@@ -4,7 +4,7 @@
 /* 简单延时函数（可根据主频调整，保证 I2C 速度低于 400kHz） */
 static void TRACK_I2C_Delay(void)
 {
-    uint8_t i = 30;   // 可根据实际主频调整，保证时序稳定
+    uint16_t i =800;   // 可根据实际主频调整，保证时序稳定
     while(i--);
 }
 
@@ -18,6 +18,9 @@ static void TRACK_SDA_Input_Mode(void)
     GPIO_InitStruct.Pin = TRACK_I2C_SDA_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_PULLUP;          // 开启内部上拉
+//		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;  // 开漏输出，配合上拉电阻
+//    GPIO_InitStruct.Pull = GPIO_PULLUP;
+//    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(TRACK_I2C_SDA_GPIO_PORT, &GPIO_InitStruct);
 }
 
@@ -128,25 +131,27 @@ void TRACK_I2C_Send_Byte(uint8_t txd)
 uint8_t TRACK_I2C_Read_Byte(unsigned char ack)
 {
     unsigned char i, receive = 0;
+    TRACK_SDA_Input_Mode();
 
-    TRACK_SDA_Input_Mode();       // 切换为输入模式准备读取数据
     for (i = 0; i < 8; i++)
     {
         HAL_GPIO_WritePin(TRACK_I2C_SCL_GPIO_PORT, TRACK_I2C_SCL_PIN, GPIO_PIN_RESET);
         TRACK_I2C_Delay();
         HAL_GPIO_WritePin(TRACK_I2C_SCL_GPIO_PORT, TRACK_I2C_SCL_PIN, GPIO_PIN_SET);
+        
+        /* 等待数据稳定 (72MHz 下约 1~2us) */
+        uint8_t wait = 20;
+        while (wait--);
+        
         receive <<= 1;
         if (HAL_GPIO_ReadPin(TRACK_I2C_SDA_GPIO_PORT, TRACK_I2C_SDA_PIN))
-            receive++;
+            receive |= 0x01;
         TRACK_I2C_Delay();
     }
 
-    TRACK_SDA_Output_Mode();      // 发送 ACK/NACK 前必须切回输出模式
-    if (!ack)
-        TRACK_I2C_NAck();
-    else
-        TRACK_I2C_Ack();
-
+    TRACK_SDA_Output_Mode();
+    if (ack == 0) TRACK_I2C_NAck();
+    else          TRACK_I2C_Ack();
     return receive;
 }
 

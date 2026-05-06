@@ -1,15 +1,11 @@
 #include "track.h"
 #include "soft_i2c_track.h"
 #include "motor.h"
+#include "extern.h"
+
 /*==================== 防抖参数配置 ====================*/
 #define TRACK_DEBOUNCE_SAMPLES   5
 #define TRACK_DEBOUNCE_DELAY_MS  1
-
-/*==================== 循迹权重（从左到右 8 路） ====================*/
-static const int IR_Weight[8] = {-4, -3, -2, -1, 1, 2, 3, 4};
-
-/*==================== PID 实例 ====================*/
-static PID_TypeDef PID = {12, 0, 6, 0, 0, 0, 0, 0, 0};   // Kp=12, Ki=0, Kd=6
 
 /*==================== 原有 I2C 初始化函数 ====================*/
 void Track_Init(void)
@@ -57,27 +53,22 @@ uint8_t Track_Read_Channel(uint8_t channel)
 /*==================== 新增：获取加权偏差 ====================*/
 int Get_Track_Error(void)
 {
-    uint8_t status = Track_Read_All();   // bit0~bit7 对应 1~8 路，1=黑线
-    int sum = 0;
-    int count = 0;
+    uint8_t status = Track_Read_All();   // 0=黑线，1=白线
+    int sum = 0, count = 0;
 
     for (int i = 0; i < 8; i++)
     {
-        if (status & (1 << i))
+        if ((status & (1 << i)) == 0)    // 检测到 0 表示黑线
         {
             sum += IR_Weight[i];
             count++;
         }
     }
 
-    if (count == 0)
-    {
-        // 全丢线处理：返回 0（可在此添加自救逻辑）
+    if (count == 0)                      // 所有位都是 1（全白）
         return 0;
-    }
-    return sum / count;   // 加权平均偏差
+    return sum / count;
 }
-
 /*==================== 新增：PID 计算 ====================*/
 int PID_Calc(int error)
 {
@@ -90,11 +81,21 @@ int PID_Calc(int error)
     return PID.output;
 }
 
+int PID_Calc_MV(int error)
+{
+    PID_MV.error = error;
+    PID_MV.P = (int)(PID_MV.Kp * PID_MV.error);
+    PID_MV.I += (int)(PID_MV.Ki * PID_MV.error);          // 积分项累加
+    PID_MV.D = (int)(PID_MV.Kd * (PID_MV.error - PID_MV.last_error));
+    PID_MV.output = PID_MV.P + PID_MV.I + PID_MV.D;
+    PID_MV.last_error = PID_MV.error;
+    return PID_MV.output;
+}
 /*==================== 新增：循迹主控函数 ====================*/
 void Track_Run(void)
 {
-    #define BASE_SPEED   50
-    #define SPEED_MAX    99
+  //  #define BASE_SPEED   120
+    #define SPEED_MAX    999
     #define SPEED_MIN    0
 
     int error = Get_Track_Error();
@@ -108,5 +109,25 @@ void Track_Run(void)
     if (right > SPEED_MAX) right = SPEED_MAX;
     if (right < SPEED_MIN) right = SPEED_MIN;
 
-    Motor(left, right);   // 需用户实现
+    Motor_Set(left, right);   // 需用户实现
+}
+
+void Track_Run_MV(void)
+{
+  //  #define BASE_SPEED   120
+    #define SPEED_MAX    999
+    #define SPEED_MIN    0
+
+    int error = -g_track_error;
+    int pwm   = PID_Calc_MV(error);
+    int left  = BASE_SPEED + pwm;
+    int right = BASE_SPEED - pwm;
+
+    // 限幅
+    if (left  > SPEED_MAX) left  = SPEED_MAX;
+    if (left  < SPEED_MIN) left  = SPEED_MIN;
+    if (right > SPEED_MAX) right = SPEED_MAX;
+    if (right < SPEED_MIN) right = SPEED_MIN;
+
+    Motor_Set(left, right);   // 需用户实现
 }
