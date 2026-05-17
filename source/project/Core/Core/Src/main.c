@@ -2,17 +2,7 @@
 /**
   ******************************************************************************
   * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2026 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
+  * @brief          : Main program body - 寻迹小车 编码器定距测试版
   ******************************************************************************
   */
 /* USER CODE END Header */
@@ -37,8 +27,10 @@
 #include "encoder.h"
 #include "BlueSerial.h"
 #include "servo.h"
+#include "arm.h"
 #include "extern.h"
 #include "test.h"
+#include "state_machine.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,9 +41,10 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-
-
-
+/* 按键引脚定义（低电平=按下） */
+#define KEY1_PRESS()  (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_0) == 0)
+#define KEY2_PRESS()  (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_1) == 0)
+#define KEY3_PRESS()  (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5) == 0)
 
 /* USER CODE END PD */
 
@@ -63,7 +56,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+uint8_t g_car_dir=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -74,6 +67,12 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+/* 机械臂校准模式变量 — 直控舵机角度 */
+static uint8_t calib_active = 0;              /* 0=正常模式, 1=校准模式 */
+static uint8_t calib_sel = 0;                 /* 0=BASE, 1=UPPER, 2=LOWER */
+static const uint32_t calib_ch[3] = {TIM_CHANNEL_1, TIM_CHANNEL_2, TIM_CHANNEL_3};
+static const char *calib_name[3] = {"BASE", "UPPER", "LOWER"};
 
 /* USER CODE END 0 */
 
@@ -115,43 +114,57 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
-Init_ALL();
+  Init_ALL();
+  Arm_Init();         /* 机械臂初始化为RESET位置 */
+
+  /* 初始化完成，显示提示 */
+  OLED_Clear();
+  OLED_ShowString(1, 1, "Ready!");    //行列均从1开始
+  OLED_ShowString(2, 1, "BT: [slider,");
+  OLED_ShowString(3, 1, "     dist,50]");
+  HAL_Delay(1500);
+	OLED_Clear();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	//Run_distance(3000);
-	while (1)
+
+
+while (1)
 	{
-//	MPU6050_OLED();
-//	Servo_Control(ServoAngle1,ServoAngle2,ServoAngle3,ServoAngle4);
-//	Track_OLED();
-//Track_Run();
-//	Track_Run_MV();
-//	Blue_Slider_Control();
-  Encoder_OLED();
-	OLED_ShowSignedNum(1,1,g_encoder_distance,5);
+
+	
+		
+	    /* ============================================================ */
+	    /*  正常模式 — 状态机驱动                                     */
+	    /* ============================================================ */
+	    State_Machine();
+//			track_flag =1;
+//			Track_Run ();
+//Blue_Slider_Control();			
+//OLED_ShowNum (1,1,distance ,4);
+//Run_To_Distance(distance);
+////			    Encoder_ResetDistance();
 
 
-
-
-
-    if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_12)==0)HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
-    if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_12)==1)HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
-    
-
-
-
-
-
-
-
-
-    HAL_Delay(100);
+////		track_flag =1;	
+//    while (1)
+//    {
+//        int32_t cur = (-(int16_t)__HAL_TIM_GET_COUNTER(&htim4)+(int16_t)__HAL_TIM_GET_COUNTER(&htim3))/2;
+//        if (cur >= 1500)Motor_Stop();
+//        /* 循迹PID纠偏 */
+//				Track_Run ();
+//       // Encoder_Update();
+//    }
+//    
+			
+			
+			
+	    HAL_Delay(50);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+	}
   /* USER CODE END 3 */
 }
 

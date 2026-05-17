@@ -23,15 +23,13 @@ float pitch = 0;
 float roll = 0;
 
 /*==================== 循迹相关 ====================*/
-int IR_Weight[8] = {39, 31, 18, 2, -2, -18, -31, -39};//循迹权重（从左到右 8 路）
+int IR_Weight[8] = {0, 31, 18, 2, -2, -18, -31, 0};//循迹权重（从左到右 8 路）
 PID_TypeDef PID = {2.0, 0, 1.9, 0, 0, 0, 0, 0, 0};
 PID_TypeDef PID_MV={2.0, 0, 1.9, 0, 0, 0, 0, 0, 0};
 uint8_t BASE_SPEED=80;
 float ir=80;
 
-uint8_t g_car_dir = 0;  
-int16_t g_encoder_distance=0;
-int16_t start_distance=0;
+int32_t start_distance=0;
 /*============舵机相关=============*/
 int SERVO_MIN_PULSE=488;
 int SERVO_MAX_PULSE=2557;
@@ -45,7 +43,11 @@ float deg_per_sec[4] = {40.0f};   //四个舵机的速度，初始为40
 ColorFrame_t g_color_frame = {0};
 
 
+uint8_t track_flag=0;
 
+uint8_t turn_flag=0;
 
 
 int temp_count=0;
+
+uint32_t distance=0;

@@ -1,7 +1,6 @@
 #ifndef __MOTOR_H
 #define __MOTOR_H
 
-#include "motor.h"
 #include "main.h"
 #include "tim.h"
 #include "gpio.h"
@@ -65,6 +64,6 @@ void Motor_Set(int left_speed, int right_speed);
 void PID_Init(PID_Controller *pid, float kp, float ki, float kd, float out_max);
 void Motor_SetSpeed(float left_mm_s, float right_mm_s);
 void Motor_Control_Loop(void);
-int16_t Motor_GetDistance(void);
+int32_t Motor_GetDistance(void);
 
 #endif

@@ -13,7 +13,6 @@
 #include "motor.h"
 #include "track.h"
 #include "servo.h"
-#include "encoder.h"
 #include "extern.h"
 // 发送环形缓冲区
 
@@ -274,7 +273,7 @@ void Blue_Slider_Control(void)
 			if(strcmp(BlueSerial_StringArray[1],"A3") == 0)ServoAngle3 = atoi(BlueSerial_StringArray[2]);
 			if(strcmp(BlueSerial_StringArray[1],"min") == 0)SERVO_MIN_PULSE = atoi(BlueSerial_StringArray[2]);
 			if(strcmp(BlueSerial_StringArray[1],"max") == 0)SERVO_MAX_PULSE = atoi(BlueSerial_StringArray[2]);
-			if(strcmp(BlueSerial_StringArray[1],"distance") == 0)distance = atoi(BlueSerial_StringArray[2]);
+			if(strcmp(BlueSerial_StringArray[1],"dj0") == 0)deg_per_sec[0] = atoi(BlueSerial_StringArray[2]);
 			if(strcmp(BlueSerial_StringArray[1],"dj1") == 0)deg_per_sec[1] = atoi(BlueSerial_StringArray[2]);
 			if(strcmp(BlueSerial_StringArray[1],"dj2") == 0)deg_per_sec[2] = atoi(BlueSerial_StringArray[2]);
 			if(strcmp(BlueSerial_StringArray[1],"dj3") == 0)deg_per_sec[3] = atoi(BlueSerial_StringArray[2]);
@@ -295,12 +294,6 @@ void Blue_Slider_Control(void)
 			else if(strcmp(BlueSerial_StringArray[1],"4") == 0)
 			{
 			IR_Weight[3] = atoi(BlueSerial_StringArray[2]);IR_Weight[4] = -atoi(BlueSerial_StringArray[2]);
-			}
-			/* [slider,dist,50] 循迹定距50cm停车 */
-			else if(strcmp(BlueSerial_StringArray[1],"dist") == 0)
-			{
-			    int32_t dist_cm = atoi(BlueSerial_StringArray[2]);
-			    Run_To_Distance(dist_cm);
 			}
 		}
 	}
@@ -349,14 +342,14 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
         // 重新开启下一次单字节接收
         HAL_UART_Receive_IT(&huart2, &rx_temp_byte, 1);
     }
-//    else if (huart->Instance == UART4)
-//    {
-//        // 将接收到的单字节（有符号）直接保存为巡线偏差
-//        g_track_error = (int8_t)uart4_rx_byte;
+    else if (huart->Instance == UART4)
+    {
+        // 将接收到的单字节（有符号）直接保存为巡线偏差
+        g_track_error = (int8_t)uart4_rx_byte;
 
-//        // 重新启动下一次单字节接收
-//        HAL_UART_Receive_IT(&huart4, &uart4_rx_byte, 1);
-//    }
+        // 重新启动下一次单字节接收
+        HAL_UART_Receive_IT(&huart4, &uart4_rx_byte, 1);
+    }
 //		if (huart->Instance == UART4)
 //    {
 //        if (rx_byte == '\n')

@@ -18,7 +18,6 @@
 #include "encoder.h"
 #include "BlueSerial.h"
 #include "servo.h"
-#include "extern.h"
 
 /*========== 陀螺仪相关变量 =============*/
 extern float yaw;
@@ -43,16 +42,20 @@ extern uint8_t ServoAngle4;
 extern float servo_angle[4];
 extern float deg_per_sec[4];
 /*========== 电机，编码器相关 =============*/
-extern SpeedCtrl g_speed_left, g_speed_right;//这两个已经在Motor_Init函数中的PID_Init进行了初始化
-extern int16_t g_encoder_distance; //后续直接赋值，不用特意初始化
+extern SpeedCtrl g_speed_left, g_speed_right;
+extern int32_t g_encoder_distance;
 extern uint8_t g_car_dir;
-extern int16_t start_distance;//全局变量，用于记录每一次定距离行驶时的开始数值
+extern int32_t start_distance;
 /*========== OpenMV相关 ==========*/
 extern ColorFrame_t g_color_frame;
 
-
 extern int temp_count;
 
+extern uint8_t track_flag;
+
+extern uint8_t turn_flag;
+
+extern uint32_t distance;
 
 
 #endif /* EXTERN_H */

@@ -53,10 +53,6 @@ void Motor(int16_t left_speed0, int16_t right_speed0)
     }
 }
 
-void Motor_Stop(void) 
-{
-Motor(0,0);
-}
 
 /* ---------- PID 相关函数 ---------- */
 void PID_Init(PID_Controller *pid, float kp, float ki, float kd, float out_max)
@@ -137,11 +133,18 @@ void Motor_Control_Loop(void)
     float out_r = PID_Calculate(&g_speed_right.pid, g_speed_right.target_speed, speed_r);
     g_speed_left.output  = (int16_t)out_l;
     g_speed_right.output = (int16_t)out_r;
-
-    Motor(g_speed_left.output, g_speed_right.output);
+		if(turn_flag == 1)
+		{
+			Motor(80,-98);
+		}
+		else if(track_flag ==1)
+		{
+			Motor(g_speed_left.output, g_speed_right.output);
+		}
+			
 }
 
-int16_t Motor_GetDistance(void) { return g_encoder_distance; }
+int32_t Motor_GetDistance(void) { return g_encoder_distance; }
 
 /* ---------- 定时器中断回调 ---------- */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
@@ -151,14 +154,17 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         Motor_Control_Loop();
        
     }
-    if (htim->Instance == TIM5)
-    {
-        Encoder_Update();
-   }
 }
 
 void Motor_Set(int left_speed, int right_speed)
 {
 		g_speed_left.target_speed=left_speed;
 		g_speed_right.target_speed=right_speed;
+}
+
+void Motor_Stop(void) 
+{
+track_flag =0;
+Motor_Set(0,0);
+Motor(0,0);
 }
