@@ -2,119 +2,78 @@
 /**
   ******************************************************************************
   * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2026 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
+  * @brief          : Main program body - ÂØªËøπÂ∞èËΩ¶ ÁºñÁ†ÅÂô®ÂÆöË∑ùÊµãËØïÁâà
   ******************************************************************************
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "i2c.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "soft_i2c.h"
 #include "oled.h"
-#include "motor.h"
+#include "soft_i2c_track.h"
 #include "track.h"
-#include "encoder.h"
-#include "arm.h"
-#include "button.h"
-#include "uart.h"
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "color_uart.h"
+#include "mpu_soft_i2c.h"
+#include "mpu6050.h"
+#include "stdio.h"
+#include "motor.h"
+#include "encoder.h"
+#include "BlueSerial.h"
+#include "servo.h"
+#include "arm.h"
+#include "extern.h"
+#include "test.h"
+#include "state_machine.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-// ±‡¬Î∆˜ƒø±ÍŒª÷√∫Í∂®“Â£®µ•Œª£∫mm£©£¨«Î∏˘æ› µº ≥°µÿµ˜’˚
-#define ENC_POS_WAREHOUSE   1200    // HOME -> ≤÷ø‚«¯
-#define ENC_POS_A           2500    // HOME -> A«¯£®¿€º∆£©
-#define ENC_POS_B           3800    // HOME -> B«¯
-#define ENC_POS_C           5100    // HOME -> C«¯
 
-#define PWM_BASE     400
-#define PWM_BACK     350
-#define TRACK_KP     1.2
-#define TRACK_KI     0.01
-#define TRACK_KD     0.3
+/* ÊåâÈîÆÂºïËÑöÂÆö‰πâÔºà‰ΩéÁîµÂπ≥=Êåâ‰∏ãÔºâ */
+#define KEY1_PRESS()  (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_0) == 0)
+#define KEY2_PRESS()  (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_1) == 0)
+#define KEY3_PRESS()  (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5) == 0)
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-// ==================== ◊¥Ã¨ª˙ ====================
-typedef enum {
-    STATE_IDLE,
-    STATE_ORDER_SETTING,
-    STATE_READY,
-    STATE_GO_WAREHOUSE,
-    STATE_ALIGN_WAREHOUSE,
-    STATE_PICK_GOODS,
-    STATE_GO_UNLOAD,
-    STATE_ALIGN_UNLOAD,
-    STATE_DROP_GOODS,
-    STATE_RETURN_HOME,
-    STATE_FINISH
-} SystemState;
-
-//–°≥µœ‡πÿ
-SystemState g_state = STATE_IDLE;   // ≥ı º–°≥µ◊¥Ã¨±‰¡ø
-uint8_t g_car_dir = 0;              // –°≥µ––Ω¯◊¥Ã¨£∫0:«∞Ω¯£¨1:∫ÛÕÀ
-int32_t g_target_enc = 0;           // µ±«∞ƒø±Í±‡¬Î∆˜æ‡¿Î
-
-//ª˙–µ±€œ‡πÿ
-uint8_t g_arm_done_event = 0;       // ª˙–µ±€∂Ø◊˜ÕÍ≥… ¬º˛
-uint8_t g_vision_done_event = 0;    //  ”æı∂‘◊ºÕÍ≥… ¬º˛
-
-//ŒÔøÈœ‡πÿ
-char g_unload_order[4] = "ABC";     // ƒ¨»œÀ≥–Ú
-uint8_t g_pick_index = 0;           // ◊•»°À˜“˝ 0:A,1:B,2:C
-uint8_t g_order_index = 0;          // µ±«∞–∂ªıÀ˜“˝–Ú∫≈
-uint8_t g_unload_count = 0;         // “—–∂ªıŒÔº∆ ˝
-
-
-
+uint8_t g_car_dir=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void State_Machine(void);
-void Start_Order_Setting(void);
-void Execute_LineTracking(int32_t target_enc, uint8_t direction);
-uint8_t Wait_AlignComplete(uint32_t timeout_ms);
-void Beep(uint16_t ms);
-void LED_Blink(uint8_t times);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void Arm_Done_Callback(void)
-{
-    g_arm_done_event = 1;
-}
+
+/* Êú∫Ê¢∞ËáÇÊ†°ÂáÜÊ®°ÂºèÂèòÈáè ‚Äî Áõ¥ÊéßËàµÊú∫ËßíÂ∫¶ */
+static uint8_t calib_active = 0;              /* 0=Ê≠£Â∏∏Ê®°Âºè, 1=Ê†°ÂáÜÊ®°Âºè */
+static uint8_t calib_sel = 0;                 /* 0=BASE, 1=UPPER, 2=LOWER */
+static const uint32_t calib_ch[3] = {TIM_CHANNEL_1, TIM_CHANNEL_2, TIM_CHANNEL_3};
+static const char *calib_name[3] = {"BASE", "UPPER", "LOWER"};
+
 /* USER CODE END 0 */
 
 /**
@@ -123,48 +82,89 @@ void Arm_Done_Callback(void)
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* Configure the system clock */
   SystemClock_Config();
 
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_I2C1_Init();
-  MX_I2C2_Init();
-  MX_TIM1_Init();
+  MX_UART4_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
-  MX_TIM4_Init();
   MX_TIM8_Init();
-  MX_USART1_UART_Init();
+  MX_TIM4_Init();
+  MX_TIM1_Init();
   MX_USART2_UART_Init();
-  MX_USART3_UART_Init();
-
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
-  Encoder_Init();
-  OLED_Init();
-  OLED_Clear();
-  Arm_Init();
-  Arm_SetDoneCallback(Arm_Done_Callback);
-  UART_Init();            // ø™∆Ù¥Æø⁄Ω” ’÷–∂œ
+  Init_ALL();
+  Arm_Init();         /* Êú∫Ê¢∞ËáÇÂàùÂßãÂåñ‰∏∫RESET‰ΩçÁΩÆ */
 
-  OLED_ShowString(0, 0, "System Ready!");
+  /* ÂàùÂßãÂåñÂÆåÊàêÔºåÊòæÁ§∫ÊèêÁ§∫ */
+  OLED_Clear();
+  OLED_ShowString(1, 1, "Ready!");    //Ë°åÂàóÂùá‰ªé1ÂºÄÂßã
+  OLED_ShowString(2, 1, "BT: [slider,");
+  OLED_ShowString(3, 1, "     dist,50]");
+  HAL_Delay(1500);
+	OLED_Clear();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-    State_Machine();       // “¿»ª”…◊¥Ã¨ª˙øÿ÷∆
-    HAL_Delay(10);
+
+
+while (1)
+	{
+
+	
+		
+	    /* ============================================================ */
+	    /*  Ê≠£Â∏∏Ê®°Âºè ‚Äî Áä∂ÊÄÅÊú∫È©±Âä®                                     */
+	    /* ============================================================ */
+	    State_Machine();
+//			track_flag =1;
+//			Track_Run ();
+//Blue_Slider_Control();			
+//OLED_ShowNum (1,1,distance ,4);
+//Run_To_Distance(distance);
+////			    Encoder_ResetDistance();
+
+
+////		track_flag =1;	
+//    while (1)
+//    {
+//        int32_t cur = (-(int16_t)__HAL_TIM_GET_COUNTER(&htim4)+(int16_t)__HAL_TIM_GET_COUNTER(&htim3))/2;
+//        if (cur >= 1500)Motor_Stop();
+//        /* Âæ™ËøπPIDÁ∫†ÂÅè */
+//				Track_Run ();
+//       // Encoder_Update();
+//    }
+//    
+			
+			
+			
+	    HAL_Delay(50);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+	}
   /* USER CODE END 3 */
 }
 
@@ -177,6 +177,9 @@ void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
+  */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
@@ -189,6 +192,8 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
@@ -204,284 +209,8 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-// ====================== ◊¥Ã¨ª˙ µœ÷ ======================
-void State_Machine(void)
-{
-    uint8_t key;
-    int32_t cur_dist;
 
-    switch(g_state)
-    {
-        case STATE_IDLE:
-            OLED_Show_State("Press KEY1 start");
-            key = Key_Scan();
-            if(key == 1)
-            {
-                Start_Order_Setting();
-            }
-            break;
 
-        case STATE_ORDER_SETTING:
-            // ¥À◊¥Ã¨‘⁄Start_Order_Setting÷–¥¶¿Ì£¨¥¶¿ÌÕÍ÷±Ω”◊‘∂ØÃ¯◊™
-            break;
-
-        case STATE_READY:
-            OLED_Show_State("Ready! Press KEY1");
-            key = Key_Scan();
-            if(key == 1)
-            {
-                g_pick_index = 0;
-                g_unload_count = 0;
-                g_order_index = 0;
-                Encoder_ResetDistance();
-                g_target_enc = ENC_POS_WAREHOUSE;
-                g_state = STATE_GO_WAREHOUSE;
-                OLED_Clear();
-            }
-            break;
-
-        case STATE_GO_WAREHOUSE:
-            Execute_LineTracking(g_target_enc, 0);  // «∞Ω¯
-            if(Encoder_GetDistance() >= g_target_enc)
-            {
-                Motor_Stop();
-                g_state = STATE_ALIGN_WAREHOUSE;
-                OLED_Clear();
-            }
-            break;
-
-        case STATE_ALIGN_WAREHOUSE:
-            OLED_Show_State("Aligning...");
-            OpenMV_SetMode(3);
-            Arm_MoveToPoint(ARM_POINT_ALIGN);
-            if(Wait_AlignComplete(5000))
-            {
-                OLED_Show_AlignResult(1);
-                Arm_MoveToPoint(ARM_POINT_RESET);
-                g_state = STATE_PICK_GOODS;
-                g_arm_done_event = 0;
-                Arm_ClearDoneFlag();
-            }
-            else
-            {
-                OLED_Show_AlignResult(0);
-                // ≥¨ ±“≤ºÃ–¯£¨ø…º”…˘π‚±®æØ
-                g_state = STATE_PICK_GOODS;
-            }
-            break;
-
-        case STATE_PICK_GOODS:
-            if(g_pick_index < 3)
-            {
-                char buf[16];
-                sprintf(buf, "Pick %c", 'A' + g_pick_index);
-                OLED_Show_State(buf);
-                if(!Arm_IsDone())
-                {
-                    Arm_PickSequence(g_pick_index);
-                }
-                if(g_arm_done_event)
-                {
-                    g_arm_done_event = 0;
-                    Arm_ClearDoneFlag();
-                    g_pick_index++;
-                    Beep(100);
-                    LED_Blink(1);
-                }
-            }
-            else
-            {
-                // ◊•»°ÕÍ±œ£¨◊º±∏«∞Õ˘µ⁄“ª∏ˆ–∂ªı«¯
-                g_unload_count = 0;
-                g_order_index = 0;
-                char target_char = g_unload_order[g_order_index];
-                if(target_char == 'A')      g_target_enc = ENC_POS_A;
-                else if(target_char == 'B') g_target_enc = ENC_POS_B;
-                else                        g_target_enc = ENC_POS_C;
-                g_state = STATE_GO_UNLOAD;
-                OLED_Clear();
-            }
-            break;
-
-        case STATE_GO_UNLOAD:
-            cur_dist = Encoder_GetDistance();
-            uint8_t dir = (g_target_enc > cur_dist) ? 0 : 1;
-            Execute_LineTracking(g_target_enc, dir);
-            if((dir == 0 && cur_dist >= g_target_enc) || (dir == 1 && cur_dist <= g_target_enc))
-            {
-                Motor_Stop();
-                g_state = STATE_ALIGN_UNLOAD;
-                OLED_Clear();
-            }
-            break;
-
-        case STATE_ALIGN_UNLOAD:
-            OLED_Show_State("Align Unload");
-            OpenMV_SetMode(3);
-            Arm_MoveToPoint(ARM_POINT_ALIGN);
-            if(Wait_AlignComplete(5000))
-            {
-                OLED_Show_AlignResult(1);
-                Arm_MoveToPoint(ARM_POINT_RESET);
-                g_state = STATE_DROP_GOODS;
-                g_arm_done_event = 0;
-                Arm_ClearDoneFlag();
-            }
-            else
-            {
-                g_state = STATE_DROP_GOODS;
-            }
-            break;
-
-        case STATE_DROP_GOODS:
-            {
-                char buf[16];
-                sprintf(buf, "Drop %c", g_unload_order[g_order_index]);
-                OLED_Show_State(buf);
-                if(!Arm_IsDone())
-                {
-                    Arm_DropSequence();
-                }
-                if(g_arm_done_event)
-                {
-                    g_arm_done_event = 0;
-                    Arm_ClearDoneFlag();
-                    Beep(200);
-                    LED_Blink(2);
-                    g_order_index++;
-                    g_unload_count++;
-                    if(g_unload_count < 3)
-                    {
-                        char next = g_unload_order[g_order_index];
-                        if(next == 'A')      g_target_enc = ENC_POS_A;
-                        else if(next == 'B') g_target_enc = ENC_POS_B;
-                        else                 g_target_enc = ENC_POS_C;
-                        g_state = STATE_GO_UNLOAD;
-                    }
-                    else
-                    {
-                        g_target_enc = 0;   // ∑µªÿHOME
-                        g_state = STATE_RETURN_HOME;
-                    }
-                    OLED_Clear();
-                }
-            }
-            break;
-
-        case STATE_RETURN_HOME:
-            cur_dist = Encoder_GetDistance();
-            dir = (0 > cur_dist) ? 0 : 1;
-            Execute_LineTracking(0, dir);
-            if((dir == 0 && cur_dist >= 0) || (dir == 1 && cur_dist <= 0))
-            {
-                Motor_Stop();
-                g_state = STATE_FINISH;
-            }
-            break;
-
-        case STATE_FINISH:
-            OLED_Show_State("Task Finish!");
-            Beep(500);
-            HAL_Delay(2000);
-            g_state = STATE_IDLE;
-            OLED_Clear();
-            break;
-    }
-}
-
-/* À≥–Ú…Ë÷√∫Ø ˝£®◊Ë»˚ Ω£¨µ´Ωˆ‘⁄…Ë÷√ ±‘À––£¨“Ú¥À≤ª”∞œÏ»ŒŒÒ÷¥––£© */
-void Start_Order_Setting(void)
-{
-    char order[4] = "   ";
-    uint8_t idx = 0;
-    uint8_t key;
-    OLED_Clear();
-    OLED_Show_Order_Setting(order, idx);
-    while(idx < 3)
-    {
-        key = Key_Scan();
-        if(key)
-        {
-            order[idx] = (key == 1) ? 'A' : (key == 2) ? 'B' : 'C';
-            OLED_Show_Order_Setting(order, idx);
-            idx++;
-            HAL_Delay(300);
-        }
-        HAL_Delay(10);
-    }
-    order[3] = '\0';
-    strcpy(g_unload_order, order);
-    OLED_Clear();
-    OLED_ShowString(0, 0, "Order Saved:");
-    OLED_ShowString(0, 1, order);
-    HAL_Delay(1500);
-    g_state = STATE_READY;
-}
-
-/* —≤œﬂ÷¥––∫Ø ˝£®∑«◊Ë»˚£¨√ø¥Œµ˜”√÷ª÷¥––“ª¥ŒPIDº∆À„”ÎµÁª˙ ‰≥ˆ£© */
-void Execute_LineTracking(int32_t target_enc, uint8_t direction)
-{
-    Track_Sensor_Read();
-    Track_PID_Calc(TRACK_KP, TRACK_KI, TRACK_KD);
-    Encoder_Update();
-    float pid_out = Get_Track_PID_Out();
-    uint16_t base_pwm = (direction == 0) ? PWM_BASE : PWM_BACK;
-    int16_t l = base_pwm - pid_out;
-    int16_t r = base_pwm + pid_out;
-    if(l < 0) l = 0; 
-    if(l > 999) l = 999;   //º”∏ˆœﬁ∑˘
-    if(r < 0) r = 0; 
-    if(r > 999) r = 999;
-
-    if(direction == 0)
-        Motor_Forward(l, r);
-    else
-        Motor_Backward(l, r);
-    g_car_dir = direction;
-}
-
-/* µ»¥˝ ”æı∂‘◊ºÕÍ≥…£®¥¯≥¨ ±£¨ƒ⁄≤ø π”√HAL_Delay£¨≤ª÷–∂œ∆‰À˚÷–∂œ£© */
-uint8_t Wait_AlignComplete(uint32_t timeout_ms)
-{
-    uint32_t tick = 0;
-    uint8_t flag;
-    while(tick < timeout_ms)
-    {
-        flag = Vision_GetAlignFlag();
-        if(flag == 1)   //  ’µΩ∆´“∆ ˝æ›
-        {
-            Vision_ClearAlignFlag();
-            float offset = Vision_GetOffset();
-            if(fabsf(offset) < 0.5f)
-                return 1;
-            // ’‚¿Ôø…º”»ÎŒ¢µ˜¥˙¬Î£¨ °¬‘
-        }
-        else if(flag == 2)  //  ’µΩOK–≈∫≈
-        {
-            Vision_ClearAlignFlag();
-            return 1;
-        }
-        HAL_Delay(10);
-        tick += 10;
-    }
-    return 0;
-}
-
-void Beep(uint16_t ms)
-{
-    //  µº ∑‰√˘∆˜¥˙¬Î£¨∞¥–Ë µœ÷
-    // HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_SET);
-    // HAL_Delay(ms);
-    // HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
-}
-
-void LED_Blink(uint8_t times)
-{
-    for(uint8_t i=0; i<times; i++)
-    {
-        // LED_ON(); HAL_Delay(100); LED_OFF(); HAL_Delay(100);
-    }
-}
 /* USER CODE END 4 */
 
 /**
@@ -498,7 +227,6 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
 #ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number

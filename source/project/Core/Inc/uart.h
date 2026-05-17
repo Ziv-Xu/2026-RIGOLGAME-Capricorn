@@ -3,6 +3,7 @@
 
 #include "main.h"
 
+/* OpenMV visual alignment functions (stubs for now) */
 void UART_Init(void);
 void OpenMV_SetMode(uint8_t mode);
 uint8_t Vision_GetAlignFlag(void);
